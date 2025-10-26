@@ -213,7 +213,7 @@ void function DiscordMessagePoller()
             if ( GetConVarString( "discordbridge_rconchannelid" ) != "" )
                 RconPollDiscordMessages()
         }
-        wait 1.25
+        wait RandomFloatRange( 1.25, 1.5 )
     }
 }
 
