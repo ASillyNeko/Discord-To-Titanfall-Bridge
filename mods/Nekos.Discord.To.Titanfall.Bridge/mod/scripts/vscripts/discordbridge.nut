@@ -1,6 +1,6 @@
-global function discordbridge_init
+global function DiscordBridge_Init
 
-void function discordbridge_init()
+void function DiscordBridge_Init()
 {
     if ( GetConVarInt( "discordbridge_shouldsendmessageifservercrashandorrestart" ) )
     {

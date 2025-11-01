@@ -54,7 +54,7 @@
 			"Path": "discordbridge.nut",
 			"RunOn": "SERVER",
 			"ServerCallback": {
-				"After": "discordbridge_init"
+				"After": "DiscordBridge_Init"
 			}
 		}
 	]
