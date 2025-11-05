@@ -364,7 +364,7 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
                     else
                         RedCircleDiscordToTitanfallBridge( meowest, GetConVarString( "discordbridge_channelid" ) )
                 }
-                if ( ( meow.tolower() == "?rcon" || ( meow.len() >= 5 && meow.slice( 0, 5 - meow.len() ).tolower() == "?rcon" ) ) && GetConVarString( "discordbridge_rconchannelid" ) == "" && GetConVarString( "discordbridge_rconusers" ) != "" )
+                if ( ( meow.tolower() == "?rcon" || ( meow.len() >= 5 && meow.slice( 0, 5 - meow.len() ).tolower() == "?rcon" ) ) && GetConVarString( "discordbridge_rconchannelid" ) == "" )
                     nyah = true
                 if ( !ranrconcommand && ( meow.len() > 200 || meow.len() <= 0 ) )
                 {
