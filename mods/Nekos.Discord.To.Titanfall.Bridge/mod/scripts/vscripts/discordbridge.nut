@@ -64,7 +64,6 @@ ClServer_MessageStruct function LogMessage( ClServer_MessageStruct message )
         thread LogMessage( message )
         return message
     }
-    MessageQueue()
     string msg = message.message
     if ( msg.len() == 0 )
         return message
@@ -93,6 +92,7 @@ ClServer_MessageStruct function LogMessage( ClServer_MessageStruct message )
         prefix = "[TEAM (" + teamstr + ")] " + playername
     else
         prefix = "(" + teamstr + ") " + playername
+    MessageQueue()
     
     string console_message = prefix + ": " + msg
     SendMessageToDiscord( console_message, false )
@@ -112,7 +112,7 @@ void function LogJoin( entity player )
     string playername = "Someone"
     if ( IsValid( player ) && player.IsPlayer() )
         playername = player.GetPlayerName()
-    string message = playername + " Has Joined The Server [Players On The Server " + GetPlayerArray().len() + "]"
+    string message = playername + " Has (Re)Connected [Currently Connected Players " + GetPlayerArray().len() + "/" + GetCurrentPlaylistVarInt( "max_players", 16 ) + "]"
     MessageQueue()
     SendMessageToDiscord( message, false )
     message = "```" + message + "```"
@@ -130,7 +130,7 @@ void function LogDisconnect( entity player )
     if ( IsValid( player ) && player.IsPlayer() )
         playername = player.GetPlayerName()
     int playercount = GetPlayerArray().len() - 1
-    string message = playername + " Has Left The Server [Players On The Server " + playercount + "]"
+    string message = playername + " Has Disconnected [Currently Connected Players " + playercount + "/" + GetCurrentPlaylistVarInt( "max_players", 16 ) + "]"
     MessageQueue()
     SendMessageToDiscord( message, false )
     message = "```" + message + "```"
@@ -184,7 +184,7 @@ void function MessageQueue()
     file.queue += 1
     while ( file.realqueue < queue || file.queuetime > Time() )
         WaitFrame()
-    file.queuetime = Time() + 0.25
+    file.queuetime = Time() + 0.40
     file.realqueue += 1
 }
 
