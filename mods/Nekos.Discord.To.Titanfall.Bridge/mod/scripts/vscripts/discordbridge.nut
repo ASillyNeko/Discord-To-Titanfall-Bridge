@@ -53,8 +53,6 @@ struct
     table<entity, int> anotherrealqueue
     table<entity, bool> haseverbeenalive
     table<string, string> namelist
-    bool firsttime = true
-    bool rconfirsttime = true
 } file
 
 ClServer_MessageStruct function LogMessage( ClServer_MessageStruct message )
@@ -110,9 +108,13 @@ void function LogJoin( entity player )
         return
     }
     string playername = "Someone"
+    string uid = "0"
     if ( IsValid( player ) && player.IsPlayer() )
+    {
         playername = player.GetPlayerName()
-    string message = playername + " Has (Re)Connected [Currently Connected Players " + GetPlayerArray().len() + "/" + GetCurrentPlaylistVarInt( "max_players", 16 ) + "]"
+        uid = player.GetUID()
+    }
+    string message = playername + "[" + uid + "] Has (Re)Connected [Currently Connected Players " + GetPlayerArray().len() + "/" + GetCurrentPlaylistVarInt( "max_players", 16 ) + "]"
     MessageQueue()
     SendMessageToDiscord( message, false )
     message = "```" + message + "```"
@@ -127,10 +129,14 @@ void function LogDisconnect( entity player )
         return
     }
     string playername = "Someone"
+    string uid = "0"
     if ( IsValid( player ) && player.IsPlayer() )
+    {
         playername = player.GetPlayerName()
+        uid = player.GetUID()
+    }
     int playercount = GetPlayerArray().len() - 1
-    string message = playername + " Has Disconnected [Currently Connected Players " + playercount + "/" + GetCurrentPlaylistVarInt( "max_players", 16 ) + "]"
+    string message = playername + "[" + uid + "] Has Disconnected [Currently Connected Players " + playercount + "/" + GetCurrentPlaylistVarInt( "max_players", 16 ) + "]"
     MessageQueue()
     SendMessageToDiscord( message, false )
     message = "```" + message + "```"
@@ -197,9 +203,9 @@ void function SendServerCrashedAndOrRestartedMessage()
     SendMessageToDiscord( message, true, false )
 }
 
-string last_discord_timestamp = "/"
+string last_discord_messageid = ";"
 
-string rconlast_discord_timestamp = "/"
+string rconlast_discord_messageid = ";"
 
 void function DiscordMessagePoller()
 {
@@ -232,19 +238,7 @@ void function PollDiscordMessages()
     
     void functionref( HttpRequestResponse ) onSuccess = void function ( HttpRequestResponse response )
     {
-        if ( file.firsttime && response.statusCode == 200 )
-        {
-            string responsebody = response.body
-            responsebody = StringReplace( responsebody, "\"mentions\"", "mentions\"", true )
-            responsebody = StringReplace( responsebody, "\"timestamp\":\"", "\"timestamp\":", true )
-            responsebody = StringReplace( responsebody, "\",\"edited_timestamp\"", ",\"edited_timestamp\"", true )
-            array<string> newresponse = split( responsebody, "" )
-            if ( newresponse.len() >= 2 )
-                last_discord_timestamp = newresponse[2]
-            file.firsttime = false
-        }
-        else
-            thread ThreadDiscordToTitanfallBridge( response )
+        thread ThreadDiscordToTitanfallBridge( response )
     }
     
     void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure failure )
@@ -270,19 +264,7 @@ void function RconPollDiscordMessages()
     
     void functionref( HttpRequestResponse ) onSuccess = void function ( HttpRequestResponse response )
     {
-        if ( file.rconfirsttime && response.statusCode == 200 )
-        {
-            string responsebody = response.body
-            responsebody = StringReplace( responsebody, "\"mentions\"", "mentions\"", true )
-            responsebody = StringReplace( responsebody, "\"timestamp\":\"", "\"timestamp\":", true )
-            responsebody = StringReplace( responsebody, "\",\"edited_timestamp\"", ",\"edited_timestamp\"", true )
-            array<string> newresponse = split( responsebody, "" )
-            if ( newresponse.len() >= 2 )
-                rconlast_discord_timestamp = newresponse[2]
-            file.rconfirsttime = false
-        }
-        else
-            thread RconThreadDiscordToTitanfallBridge( response )
+        thread RconThreadDiscordToTitanfallBridge( response )
     }
     
     void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure failure )
@@ -307,74 +289,90 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
         responsebody = ""
         for ( int i = 0; i < fixedresponse.len(); i++ )
             responsebody += fixedresponse[i]
-        responsebody = StringReplace( responsebody, "\"author\"", "author\"", true )
-        responsebody = StringReplace( responsebody, "\"pinned\"", "pinned\"", true )
-        responsebody = StringReplace( responsebody, "\"mentions\"", "mentions\"", true )
-        responsebody = StringReplace( responsebody, "\"channel_id\"", "channel_id\"", true )
         responsebody = StringReplace( responsebody, "},{\"type\"", "[{", true )
-        responsebody = StringReplace( responsebody, "\"timestamp\":\"", "\"timestamp\":", true )
-        responsebody = StringReplace( responsebody, "\",\"edited_timestamp\"", ",\"edited_timestamp\"", true )
         array<string> newresponse = split( responsebody, "" )
-        if ( newresponse.len() < 6 )
+        if ( !newresponse.len() || !newresponse[0].len() )
             return
-        array<int> messages = [28, 21, 14, 7, 0]
-        for ( int i = 0; i < messages.len(); i++ )
+        string messageid = last_discord_messageid
+        string newestmessageid = ""
+        newresponse.reverse()
+        int i = 0
+        foreach ( string newresponsestr in newresponse )
         {
-            int i = messages[i]
+            responsebody = newresponsestr
+            responsebody = StringReplace( responsebody, "\"author\"", "author\"", true )
+            responsebody = StringReplace( responsebody, "\"pinned\"", "pinned\"", true )
+            responsebody = StringReplace( responsebody, "\"mentions\"", "mentions\"", true )
+            responsebody = StringReplace( responsebody, "\"channel_id\"", "channel_id\"", true )
+            array<string> arrayresponse = split( responsebody, "" )
+
             bool nyah = false
-            if ( i + 6 >= newresponse.len() )
+            if ( arrayresponse.len() != 5 )
                 nyah = true
-            if ( !nyah && last_discord_timestamp >= newresponse[ i + 2 ] )
-                nyah = true
-            if ( !nyah && newresponse[ i + 5 ].find( "\"bot\"" ) )
-                nyah = true
+            if ( nyah && i == newresponse.len() - 1 && !newestmessageid.len() )
+                last_discord_messageid = "/"
+            else if ( nyah && i == newresponse.len() - 1 )
+                last_discord_messageid = newestmessageid
             if ( !nyah )
             {
-                string meow = newresponse[i]
+                string meow = arrayresponse[0]
                 meow = meow.slice( 0, -2 )
                 while ( meow.find( ":\"" ) )
                     meow = meow.slice( 1 )
                 meow = meow.slice( 2 )
-                string meower = newresponse[ i + 5 ]
+
+                string meower = arrayresponse[3]
                 meower = meower.slice( 15 )
                 while ( meower.find( "\"" ) )
                     meower = meower.slice( 0, -1 )
-                string meowest = newresponse[ i + 3 ]
+
+                string meowest = arrayresponse[1]
                 meowest = meowest.slice( 0, -2 )
                 while ( meowest.find( "id" ) )
                     meowest = meowest.slice( 1 )
                 meowest = meowest.slice( 5 )
-                if ( meow.len() >= 5 && meow.slice( 0, 5 - meow.len() ).tolower() == "?rcon" && GetConVarString( "discordbridge_rconchannelid" ) == "" && GetConVarString( "discordbridge_rconusers" ) != "" )
-                {
-                    meow = StringReplace( meow, "\\\"", "\"", true )
-                    meow = StringReplace( meow, "\\\\", "\\", true )
-                    array<string> rconusers = split( GetConVarString( "discordbridge_rconusers" ), "," )
-                    bool shouldruncommand = false
-                    for ( int i = 0; i < rconusers.len(); i++ )
-                        if ( rconusers[i] == meower )
-                            shouldruncommand = true
-                    if ( shouldruncommand )
-                    {
-                        GreenCircleDiscordToTitanfallBridge( meowest, GetConVarString( "discordbridge_channelid" ) )
-                        print( "[DiscordBridge] Running Rcon Command: " + meow )
-                        ServerCommand( meow.slice( 5 ) )
-                    }
-                    else
-                        nyah = true
-                }
-                if ( ( meow.tolower() == "?rcon" || ( meow.len() >= 5 && meow.slice( 0, 5 - meow.len() ).tolower() == "?rcon" ) ) && GetConVarString( "discordbridge_rconchannelid" ) == "" )
+                newestmessageid = meowest
+
+                if ( i == newresponse.len() - 1 )
+                    last_discord_messageid = meowest
+                if ( !nyah && messageid >= meowest )
                     nyah = true
-                if ( nyah || meow.len() > 200 || meow.len() <= 0 )
-                {
-                    RedCircleDiscordToTitanfallBridge( meowest, GetConVarString( "discordbridge_channelid" ) )
+                if ( !nyah && arrayresponse[3].find( "\"bot\"" ) != null )
                     nyah = true
-                }
                 if ( !nyah )
-                    thread EndThreadDiscordToTitanfallBridge( meow, meower, meowest )
-                wait 0.25
+                {
+                    if ( meow.len() >= 5 && meow.slice( 0, 5 - meow.len() ).tolower() == "?rcon" && GetConVarString( "discordbridge_rconchannelid" ) == "" && GetConVarString( "discordbridge_rconusers" ) != "" )
+                    {
+                        meow = StringReplace( meow, "\\\"", "\"", true )
+                        meow = StringReplace( meow, "\\\\", "\\", true )
+                        array<string> rconusers = split( GetConVarString( "discordbridge_rconusers" ), "," )
+                        bool shouldruncommand = false
+                        for ( int i = 0; i < rconusers.len(); i++ )
+                            if ( rconusers[i] == meower )
+                                shouldruncommand = true
+                        if ( shouldruncommand )
+                        {
+                            GreenCircleDiscordToTitanfallBridge( meowest, GetConVarString( "discordbridge_channelid" ) )
+                            print( "[DiscordBridge] Running Rcon Command: " + meow )
+                            ServerCommand( meow.slice( 5 ) )
+                        }
+                        else
+                            nyah = true
+                    }
+                    if ( ( meow.tolower() == "?rcon" || ( meow.len() >= 5 && meow.slice( 0, 5 - meow.len() ).tolower() == "?rcon" ) ) && GetConVarString( "discordbridge_rconchannelid" ) == "" )
+                        nyah = true
+                    if ( nyah || meow.len() > 200 || meow.len() <= 0 )
+                    {
+                        RedCircleDiscordToTitanfallBridge( meowest, GetConVarString( "discordbridge_channelid" ) )
+                        nyah = true
+                    }
+                    if ( !nyah )
+                        thread EndThreadDiscordToTitanfallBridge( meow, meower, meowest )
+                    wait 0.25
+                }
             }
+            i += 1
         }
-        last_discord_timestamp = newresponse[2]
     }
     else
     {
@@ -397,65 +395,81 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
         responsebody = ""
         for ( int i = 0; i < fixedresponse.len(); i++ )
             responsebody += fixedresponse[i]
-        responsebody = StringReplace( responsebody, "\"author\"", "author\"", true )
-        responsebody = StringReplace( responsebody, "\"pinned\"", "pinned\"", true )
-        responsebody = StringReplace( responsebody, "\"mentions\"", "mentions\"", true )
-        responsebody = StringReplace( responsebody, "\"channel_id\"", "channel_id\"", true )
         responsebody = StringReplace( responsebody, "},{\"type\"", "[{", true )
-        responsebody = StringReplace( responsebody, "\"timestamp\":\"", "\"timestamp\":", true )
-        responsebody = StringReplace( responsebody, "\",\"edited_timestamp\"", ",\"edited_timestamp\"", true )
         array<string> newresponse = split( responsebody, "" )
-        if ( newresponse.len() < 6 )
+        if ( !newresponse.len() || !newresponse[0].len() )
             return
-        array<int> messages = [28, 21, 14, 7, 0]
-        for ( int i = 0; i < messages.len(); i++ )
+        string messageid = rconlast_discord_messageid
+        string newestmessageid = ""
+        newresponse.reverse()
+        int i = 0
+        foreach ( string newresponsestr in newresponse )
         {
-            int i = messages[i]
+            responsebody = newresponsestr
+            responsebody = StringReplace( responsebody, "\"author\"", "author\"", true )
+            responsebody = StringReplace( responsebody, "\"pinned\"", "pinned\"", true )
+            responsebody = StringReplace( responsebody, "\"mentions\"", "mentions\"", true )
+            responsebody = StringReplace( responsebody, "\"channel_id\"", "channel_id\"", true )
+            array<string> arrayresponse = split( responsebody, "" )
+
             bool nyah = false
-            if ( i + 6 >= newresponse.len() )
+            if ( arrayresponse.len() != 5 )
                 nyah = true
-            if ( !nyah && rconlast_discord_timestamp >= newresponse[ i + 2 ] )
-                nyah = true
-            if ( !nyah && newresponse[ i + 5 ].find( "\"bot\"" ) )
-                nyah = true
+            if ( nyah && i == newresponse.len() - 1 && !newestmessageid.len() )
+                rconlast_discord_messageid = "/"
+            else if ( nyah && i == newresponse.len() - 1 )
+                rconlast_discord_messageid = newestmessageid
             if ( !nyah )
             {
-                string meow = newresponse[i]
+                string meow = arrayresponse[0]
                 meow = meow.slice( 0, -2 )
                 while ( meow.find( ":\"" ) )
                     meow = meow.slice( 1 )
                 meow = meow.slice( 2 )
-                string meower = newresponse[ i + 5 ]
+
+                string meower = arrayresponse[3]
                 meower = meower.slice( 15 )
                 while ( meower.find( "\"" ) )
                     meower = meower.slice( 0, -1 )
-                string meowest = newresponse[ i + 3 ]
+
+                string meowest = arrayresponse[1]
                 meowest = meowest.slice( 0, -2 )
                 while ( meowest.find( "id" ) )
                     meowest = meowest.slice( 1 )
                 meowest = meowest.slice( 5 )
-                if ( meow.len() >= 5 && meow.slice( 0, 5 - meow.len() ).tolower() == "?rcon" )
+                newestmessageid = meowest
+
+                if ( i == newresponse.len() - 1 )
+                    rconlast_discord_messageid = meowest
+                if ( !nyah && messageid >= meowest )
+                    nyah = true
+                if ( !nyah && arrayresponse[3].find( "\"bot\"" ) != null )
+                    nyah = true
+                if ( !nyah )
                 {
-                    meow = StringReplace( meow, "\\\"", "\"", true )
-                    meow = StringReplace( meow, "\\\\", "\\", true )
-                    array<string> rconusers = split( GetConVarString( "discordbridge_rconusers" ), "," )
-                    bool shouldruncommand = false
-                    for ( int i = 0; i < rconusers.len(); i++ )
-                        if ( rconusers[i] == meower )
-                            shouldruncommand = true
-                    if ( shouldruncommand )
+                    if ( meow.len() >= 5 && meow.slice( 0, 5 - meow.len() ).tolower() == "?rcon" )
                     {
-                        GreenCircleDiscordToTitanfallBridge( meowest, GetConVarString( "discordbridge_rconchannelid" ) )
-                        print( "[DiscordBridge] Running Rcon Command: " + meow )
-                        ServerCommand( meow.slice( 5 ) )
+                        meow = StringReplace( meow, "\\\"", "\"", true )
+                        meow = StringReplace( meow, "\\\\", "\\", true )
+                        array<string> rconusers = split( GetConVarString( "discordbridge_rconusers" ), "," )
+                        bool shouldruncommand = false
+                        for ( int i = 0; i < rconusers.len(); i++ )
+                            if ( rconusers[i] == meower )
+                                shouldruncommand = true
+                        if ( shouldruncommand )
+                        {
+                            GreenCircleDiscordToTitanfallBridge( meowest, GetConVarString( "discordbridge_rconchannelid" ) )
+                            print( "[DiscordBridge] Running Rcon Command: " + meow )
+                            ServerCommand( meow.slice( 5 ) )
+                        }
+                        else
+                            RedCircleDiscordToTitanfallBridge( meowest, GetConVarString( "discordbridge_rconchannelid" ) )
                     }
-                    else
-                        RedCircleDiscordToTitanfallBridge( meowest, GetConVarString( "discordbridge_rconchannelid" ) )
+                    wait 0.25
                 }
             }
-            wait 0.25
+            i += 1
         }
-        rconlast_discord_timestamp = newresponse[2]
     }
     else
     {
