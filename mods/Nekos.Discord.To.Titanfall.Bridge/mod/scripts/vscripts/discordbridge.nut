@@ -1,3 +1,5 @@
+untyped
+
 global function DiscordBridge_Init
 
 void function DiscordBridge_Init()
@@ -212,11 +214,20 @@ void function DiscordMessagePoller()
     WaitFrame()
     while ( true )
     {
-        if ( GetConVarString( "discordbridge_bottoken" ) != "" && GetConVarString( "discordbridge_channelid" ) != "" && GetConVarString( "discordbridge_serverid" ) != "" )
+        if ( GetPlayerArray().len() )
         {
-            MessageQueue()
-            PollDiscordMessages()
-            if ( GetConVarString( "discordbridge_rconchannelid" ) != "" )
+            if ( GetConVarString( "discordbridge_bottoken" ) != "" && GetConVarString( "discordbridge_serverid" ) != "" )
+            {
+                if ( GetConVarString( "discordbridge_channelid" ) != "" )
+                    PollDiscordMessages()
+                if ( GetConVarString( "discordbridge_rconchannelid" ) != "" )
+                    RconPollDiscordMessages()
+            }
+        }
+        else
+        {
+            last_discord_messageid = ";"
+            if ( GetConVarString( "discordbridge_bottoken" ) != "" && GetConVarString( "discordbridge_serverid" ) != "" && GetConVarString( "discordbridge_rconchannelid" ) != "" )
                 RconPollDiscordMessages()
         }
         wait RandomFloatRange( 1.25, 1.5 )
@@ -243,7 +254,7 @@ void function PollDiscordMessages()
     
     void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure failure )
     {
-        print( "[DiscordBridge] Request failed: " + failure.errorMessage )
+        print( "[DiscordBridge] Request Failed: " + failure.errorMessage )
     }
     
     NSHttpRequest( request, onSuccess, onFailure )
@@ -269,7 +280,7 @@ void function RconPollDiscordMessages()
     
     void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure failure )
     {
-        print( "[DiscordBridge] Request failed: " + failure.errorMessage )
+        print( "[DiscordBridge] Request Failed: " + failure.errorMessage )
     }
     
     NSHttpRequest( request, onSuccess, onFailure )
@@ -309,10 +320,11 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
             bool nyah = false
             if ( arrayresponse.len() != 5 )
                 nyah = true
-            if ( nyah && i == newresponse.len() - 1 && !newestmessageid.len() )
-                last_discord_messageid = "/"
-            else if ( nyah && i == newresponse.len() - 1 )
-                last_discord_messageid = newestmessageid
+            if ( nyah && i == newresponse.len() - 1 && GetPlayerArray().len() )
+                if ( !newestmessageid.len() )
+                    last_discord_messageid = "/"
+                else
+                    last_discord_messageid = newestmessageid
             if ( !nyah )
             {
                 string meow = arrayresponse[0]
@@ -333,39 +345,60 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
                 meowest = meowest.slice( 5 )
                 newestmessageid = meowest
 
-                if ( i == newresponse.len() - 1 )
+                if ( i == newresponse.len() - 1 && GetPlayerArray().len() )
                     last_discord_messageid = meowest
-                if ( !nyah && messageid >= meowest )
+                if ( messageid >= meowest )
                     nyah = true
                 if ( !nyah && arrayresponse[3].find( "\"bot\"" ) != null )
                     nyah = true
                 if ( !nyah )
                 {
-                    if ( meow.len() >= 5 && meow.slice( 0, 5 - meow.len() ).tolower() == "?rcon" && GetConVarString( "discordbridge_rconchannelid" ) == "" && GetConVarString( "discordbridge_rconusers" ) != "" )
+                    if ( GetConVarString( "discordbridge_rconchannelid" ) == "" && GetConVarString( "discordbridge_rconusers" ) != "" )
                     {
-                        meow = StringReplace( meow, "\\\"", "\"", true )
-                        meow = StringReplace( meow, "\\\\", "\\", true )
-                        array<string> rconusers = split( GetConVarString( "discordbridge_rconusers" ), "," )
-                        bool shouldruncommand = false
-                        for ( int i = 0; i < rconusers.len(); i++ )
-                            if ( rconusers[i] == meower )
-                                shouldruncommand = true
-                        if ( shouldruncommand )
+                        if ( meow.len() >= 11 && meow.slice( 0, 11 - meow.len() ).tolower() == "?rconscript" )
                         {
-                            GreenCircleDiscordToTitanfallBridge( meowest, GetConVarString( "discordbridge_channelid" ) )
-                            print( "[DiscordBridge] Running Rcon Command: " + meow )
-                            ServerCommand( meow.slice( 5 ) )
+                            meow = StringReplace( meow, "\\\"", "\"", true )
+                            meow = StringReplace( meow, "\\\\", "\\", true )
+                            array<string> rconusers = split( GetConVarString( "discordbridge_rconusers" ), "," )
+                            bool shouldruncommand = false
+                            for ( int i = 0; i < rconusers.len(); i++ )
+                                if ( rconusers[i] == meower )
+                                    shouldruncommand = true
+                            if ( shouldruncommand )
+                            {
+                                GreenCircleDiscordToTitanfallBridge( meowest, GetConVarString( "discordbridge_channelid" ) )
+                                print( "[DiscordBridge] Running Rcon Script: " + meow )
+                                thread compilestring( meow.slice( 11 ) )()
+                            }
+                            else
+                                nyah = true
                         }
-                        else
-                            nyah = true
+                        else if ( meow.len() >= 5 && meow.slice( 0, 5 - meow.len() ).tolower() == "?rcon" )
+                        {
+                            meow = StringReplace( meow, "\\\"", "\"", true )
+                            meow = StringReplace( meow, "\\\\", "\\", true )
+                            array<string> rconusers = split( GetConVarString( "discordbridge_rconusers" ), "," )
+                            bool shouldruncommand = false
+                            for ( int i = 0; i < rconusers.len(); i++ )
+                                if ( rconusers[i] == meower )
+                                    shouldruncommand = true
+                            if ( shouldruncommand )
+                            {
+                                GreenCircleDiscordToTitanfallBridge( meowest, GetConVarString( "discordbridge_channelid" ) )
+                                print( "[DiscordBridge] Running Rcon Command: " + meow )
+                                ServerCommand( meow.slice( 5 ) )
+                            }
+                            else
+                                nyah = true
+                        }
                     }
-                    if ( ( meow.tolower() == "?rcon" || ( meow.len() >= 5 && meow.slice( 0, 5 - meow.len() ).tolower() == "?rcon" ) ) && GetConVarString( "discordbridge_rconchannelid" ) == "" )
-                        nyah = true
                     if ( nyah || meow.len() > 200 || meow.len() <= 0 )
                     {
                         RedCircleDiscordToTitanfallBridge( meowest, GetConVarString( "discordbridge_channelid" ) )
                         nyah = true
                     }
+                    if ( ( meow.tolower() == "?rcon" || ( meow.len() >= 5 && meow.slice( 0, 5 - meow.len() ).tolower() == "?rcon" ) ) && GetConVarString( "discordbridge_rconchannelid" ) == "" )
+                        nyah = true
                     if ( !nyah )
                         thread EndThreadDiscordToTitanfallBridge( meow, meower, meowest )
                     wait 0.25
@@ -376,7 +409,7 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
     }
     else
     {
-        print( "[DiscordBridge] Request failed with status: " + response.statusCode.tostring() )
+        print( "[DiscordBridge] Request Failed With Status: " + response.statusCode.tostring() )
         print( "[DiscordBridge] Response Body: " + response.body )
     }
 }
@@ -441,13 +474,31 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 
                 if ( i == newresponse.len() - 1 )
                     rconlast_discord_messageid = meowest
-                if ( !nyah && messageid >= meowest )
+                if ( messageid >= meowest )
                     nyah = true
                 if ( !nyah && arrayresponse[3].find( "\"bot\"" ) != null )
                     nyah = true
                 if ( !nyah )
                 {
-                    if ( meow.len() >= 5 && meow.slice( 0, 5 - meow.len() ).tolower() == "?rcon" )
+                    if ( meow.len() >= 11 && meow.slice( 0, 11 - meow.len() ).tolower() == "?rconscript" )
+                    {
+                        meow = StringReplace( meow, "\\\"", "\"", true )
+                        meow = StringReplace( meow, "\\\\", "\\", true )
+                        array<string> rconusers = split( GetConVarString( "discordbridge_rconusers" ), "," )
+                        bool shouldruncommand = false
+                        for ( int i = 0; i < rconusers.len(); i++ )
+                            if ( rconusers[i] == meower )
+                                shouldruncommand = true
+                        if ( shouldruncommand )
+                        {
+                            GreenCircleDiscordToTitanfallBridge( meowest, GetConVarString( "discordbridge_rconchannelid" ) )
+                            print( "[DiscordBridge] Running Rcon Script: " + meow )
+                            thread compilestring( meow.slice( 11 ) )()
+                        }
+                        else
+                            RedCircleDiscordToTitanfallBridge( meowest, GetConVarString( "discordbridge_rconchannelid" ) )
+                    }
+                    else if ( meow.len() >= 5 && meow.slice( 0, 5 - meow.len() ).tolower() == "?rcon" )
                     {
                         meow = StringReplace( meow, "\\\"", "\"", true )
                         meow = StringReplace( meow, "\\\\", "\\", true )
@@ -473,7 +524,7 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
     }
     else
     {
-        print( "[DiscordBridge] Request failed with status: " + response.statusCode.tostring() )
+        print( "[DiscordBridge] Request Failed With Status: " + response.statusCode.tostring() )
         print( "[DiscordBridge] Response Body: " + response.body )
     }
 }
@@ -509,14 +560,14 @@ void function GetUserNickname( string userid )
         }
         else
         {
-            print( "[DiscordBridge] Request failed with status: " + response.statusCode.tostring() )
+            print( "[DiscordBridge] Request Failed With Status: " + response.statusCode.tostring() )
             print( "[DiscordBridge] Response Body: " + response.body )
         }
     }
     
     void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure failure )
     {
-        print( "[DiscordBridge] Request failed: " + failure.errorMessage )
+        print( "[DiscordBridge] Request Failed: " + failure.errorMessage )
     }
 
     NSHttpRequest( request, onSuccess, onFailure )
@@ -580,13 +631,13 @@ void function RedCircleDiscordToTitanfallBridge( string meowest, string channeli
     {
         if ( response.statusCode != 204 )
         {
-            print( "[DiscordBridge] Request failed with status: " + response.statusCode.tostring() )
+            print( "[DiscordBridge] Request Failed With Status: " + response.statusCode.tostring() )
             print( "[DiscordBridge] Response Body: " + response.body )
         }
     }
     void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure failure )
     {
-        print( "[DiscordBridge] Request failed: " + failure.errorMessage )
+        print( "[DiscordBridge] Request Failed: " + failure.errorMessage )
     }
     NSHttpRequest( request, onSuccess, onFailure )
 }
@@ -606,13 +657,13 @@ void function GreenCircleDiscordToTitanfallBridge( string meowest, string channe
     {
         if ( response.statusCode != 204 )
         {
-            print( "[DiscordBridge] Request failed with status: " + response.statusCode.tostring() )
+            print( "[DiscordBridge] Request Failed With Status: " + response.statusCode.tostring() )
             print( "[DiscordBridge] Response Body: " + response.body )
         }
     }
     void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure failure )
     {
-        print( "[DiscordBridge] Request failed: " + failure.errorMessage )
+        print( "[DiscordBridge] Request Failed: " + failure.errorMessage )
     }
     NSHttpRequest( request, onSuccess, onFailure )
 }
