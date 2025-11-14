@@ -332,6 +332,8 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
                 while ( meow.find( ":\"" ) )
                     meow = meow.slice( 1 )
                 meow = meow.slice( 2 )
+                meow = StringReplace( meow, "\\\"", "\"", true )
+                meow = StringReplace( meow, "\\\\", "\\", true )
 
                 string meower = arrayresponse[3]
                 meower = meower.slice( 15 )
@@ -357,8 +359,6 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
                     {
                         if ( meow.len() >= 11 && meow.slice( 0, 11 - meow.len() ).tolower() == "?rconscript" )
                         {
-                            meow = StringReplace( meow, "\\\"", "\"", true )
-                            meow = StringReplace( meow, "\\\\", "\\", true )
                             array<string> rconusers = split( GetConVarString( "discordbridge_rconusers" ), "," )
                             bool shouldruncommand = false
                             for ( int i = 0; i < rconusers.len(); i++ )
@@ -375,8 +375,6 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
                         }
                         else if ( meow.len() >= 5 && meow.slice( 0, 5 - meow.len() ).tolower() == "?rcon" )
                         {
-                            meow = StringReplace( meow, "\\\"", "\"", true )
-                            meow = StringReplace( meow, "\\\\", "\\", true )
                             array<string> rconusers = split( GetConVarString( "discordbridge_rconusers" ), "," )
                             bool shouldruncommand = false
                             for ( int i = 0; i < rconusers.len(); i++ )
@@ -459,6 +457,8 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
                 while ( meow.find( ":\"" ) )
                     meow = meow.slice( 1 )
                 meow = meow.slice( 2 )
+                meow = StringReplace( meow, "\\\"", "\"", true )
+                meow = StringReplace( meow, "\\\\", "\\", true )
 
                 string meower = arrayresponse[3]
                 meower = meower.slice( 15 )
@@ -482,8 +482,6 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
                 {
                     if ( meow.len() >= 11 && meow.slice( 0, 11 - meow.len() ).tolower() == "?rconscript" )
                     {
-                        meow = StringReplace( meow, "\\\"", "\"", true )
-                        meow = StringReplace( meow, "\\\\", "\\", true )
                         array<string> rconusers = split( GetConVarString( "discordbridge_rconusers" ), "," )
                         bool shouldruncommand = false
                         for ( int i = 0; i < rconusers.len(); i++ )
@@ -500,8 +498,6 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
                     }
                     else if ( meow.len() >= 5 && meow.slice( 0, 5 - meow.len() ).tolower() == "?rcon" )
                     {
-                        meow = StringReplace( meow, "\\\"", "\"", true )
-                        meow = StringReplace( meow, "\\\\", "\\", true )
                         array<string> rconusers = split( GetConVarString( "discordbridge_rconusers" ), "," )
                         bool shouldruncommand = false
                         for ( int i = 0; i < rconusers.len(); i++ )
