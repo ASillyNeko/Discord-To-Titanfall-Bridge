@@ -78,6 +78,7 @@ ClServer_MessageStruct function LogMessage( ClServer_MessageStruct message )
     
     string prefix = ""
     string teamstr = ""
+    string communitytag = message.player.GetCommunityClanTag().len() ? "[" + message.player.GetCommunityClanTag() + "] " : ""
     if ( playerteam <= 0 )
         teamstr = "Spec"
     else if ( playerteam == 1 )
@@ -89,9 +90,9 @@ ClServer_MessageStruct function LogMessage( ClServer_MessageStruct message )
     else
         teamstr = "Both"
     if ( message.isTeam )
-        prefix = "[TEAM (" + teamstr + ")] " + playername
+        prefix = "[TEAM (" + teamstr + ")] " + communitytag + playername
     else
-        prefix = "(" + teamstr + ") " + playername
+        prefix = "(" + teamstr + ") " + communitytag + playername
     MessageQueue()
     
     string console_message = prefix + ": " + msg
