@@ -605,8 +605,6 @@ void function EndThreadDiscordToTitanfallBridge( string meow, string meower, str
 {
     GetUserNickname( meower )
     meower = GetUserTrueNickname( meower )
-    meow = StringReplace( meow, "\\\"", "\"", true )
-    meow = StringReplace( meow, "\\\\", "\\", true )
     print( "[DiscordBridge] Messaging Players: [Discord] " + meower + ": " + meow )
     SendMessageToPlayers( "[38;2;88;101;242m" + "[Discord] " + meower + ": \x1b[0m" + meow )
     GreenCircleDiscordToTitanfallBridge( meowest, GetConVarString( "discordbridge_channelid" ) )
