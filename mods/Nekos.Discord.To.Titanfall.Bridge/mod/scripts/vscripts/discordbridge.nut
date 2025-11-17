@@ -206,9 +206,9 @@ void function SendServerCrashedAndOrRestartedMessage()
     SendMessageToDiscord( message, true, false )
 }
 
-string last_discord_messageid = ";"
+string last_discord_timestamp = ";"
 
-string rconlast_discord_messageid = ";"
+string rconlast_discord_timestamp = ";"
 
 void function DiscordMessagePoller()
 {
@@ -227,7 +227,7 @@ void function DiscordMessagePoller()
         }
         else
         {
-            last_discord_messageid = ";"
+            last_discord_timestamp = ";"
             if ( GetConVarString( "discordbridge_bottoken" ) != "" && GetConVarString( "discordbridge_serverid" ) != "" && GetConVarString( "discordbridge_rconchannelid" ) != "" )
                 RconPollDiscordMessages()
         }
@@ -305,8 +305,8 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
         array<string> newresponse = split( responsebody, "" )
         if ( !newresponse.len() || !newresponse[0].len() )
             return
-        string messageid = last_discord_messageid
-        string newestmessageid = ""
+        string timestamp = last_discord_timestamp
+        string newesttimestamp = ""
         newresponse.reverse()
         int i = 0
         foreach ( string newresponsestr in newresponse )
@@ -316,16 +316,18 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
             responsebody = StringReplace( responsebody, "\"pinned\"", "pinned\"", true )
             responsebody = StringReplace( responsebody, "\"mentions\"", "mentions\"", true )
             responsebody = StringReplace( responsebody, "\"channel_id\"", "channel_id\"", true )
+            responsebody = StringReplace( responsebody, "\"timestamp\":\"", "\"timestamp\":", true )
+            responsebody = StringReplace( responsebody, "\",\"edited_timestamp\"", ",\"edited_timestamp\"", true )
             array<string> arrayresponse = split( responsebody, "" )
 
             bool nyah = false
-            if ( arrayresponse.len() != 5 )
+            if ( arrayresponse.len() != 7 )
                 nyah = true
             if ( nyah && i == newresponse.len() - 1 && GetPlayerArray().len() )
-                if ( !newestmessageid.len() )
-                    last_discord_messageid = "/"
+                if ( !newesttimestamp.len() )
+                    last_discord_timestamp = "/"
                 else
-                    last_discord_messageid = newestmessageid
+                    last_discord_timestamp = newesttimestamp
             if ( !nyah )
             {
                 string meow = arrayresponse[0]
@@ -336,23 +338,23 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
                 meow = StringReplace( meow, "\\\"", "\"", true )
                 meow = StringReplace( meow, "\\\\", "\\", true )
 
-                string meower = arrayresponse[3]
+                string meower = arrayresponse[5]
                 meower = meower.slice( 15 )
                 while ( meower.find( "\"" ) )
                     meower = meower.slice( 0, -1 )
 
-                string meowest = arrayresponse[1]
+                string meowest = arrayresponse[3]
                 meowest = meowest.slice( 0, -2 )
                 while ( meowest.find( "id" ) )
                     meowest = meowest.slice( 1 )
                 meowest = meowest.slice( 5 )
-                newestmessageid = meowest
+                newesttimestamp = arrayresponse[2]
 
                 if ( i == newresponse.len() - 1 && GetPlayerArray().len() )
-                    last_discord_messageid = meowest
-                if ( messageid >= meowest )
+                    last_discord_timestamp = newesttimestamp
+                if ( timestamp >= arrayresponse[2] )
                     nyah = true
-                if ( !nyah && arrayresponse[3].find( "\"bot\"" ) != null )
+                if ( !nyah && arrayresponse[5].find( "\"bot\"" ) != null )
                     nyah = true
                 if ( !nyah )
                 {
@@ -431,8 +433,8 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
         array<string> newresponse = split( responsebody, "" )
         if ( !newresponse.len() || !newresponse[0].len() )
             return
-        string messageid = rconlast_discord_messageid
-        string newestmessageid = ""
+        string timestamp = rconlast_discord_timestamp
+        string newesttimestamp = ""
         newresponse.reverse()
         int i = 0
         foreach ( string newresponsestr in newresponse )
@@ -442,15 +444,17 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
             responsebody = StringReplace( responsebody, "\"pinned\"", "pinned\"", true )
             responsebody = StringReplace( responsebody, "\"mentions\"", "mentions\"", true )
             responsebody = StringReplace( responsebody, "\"channel_id\"", "channel_id\"", true )
+            responsebody = StringReplace( responsebody, "\"timestamp\":\"", "\"timestamp\":", true )
+            responsebody = StringReplace( responsebody, "\",\"edited_timestamp\"", ",\"edited_timestamp\"", true )
             array<string> arrayresponse = split( responsebody, "" )
 
             bool nyah = false
-            if ( arrayresponse.len() != 5 )
+            if ( arrayresponse.len() != 7 )
                 nyah = true
-            if ( nyah && i == newresponse.len() - 1 && !newestmessageid.len() )
-                rconlast_discord_messageid = "/"
+            if ( nyah && i == newresponse.len() - 1 && !newesttimestamp.len() )
+                rconlast_discord_timestamp = "/"
             else if ( nyah && i == newresponse.len() - 1 )
-                rconlast_discord_messageid = newestmessageid
+                rconlast_discord_timestamp = newesttimestamp
             if ( !nyah )
             {
                 string meow = arrayresponse[0]
@@ -461,23 +465,23 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
                 meow = StringReplace( meow, "\\\"", "\"", true )
                 meow = StringReplace( meow, "\\\\", "\\", true )
 
-                string meower = arrayresponse[3]
+                string meower = arrayresponse[5]
                 meower = meower.slice( 15 )
                 while ( meower.find( "\"" ) )
                     meower = meower.slice( 0, -1 )
 
-                string meowest = arrayresponse[1]
+                string meowest = arrayresponse[3]
                 meowest = meowest.slice( 0, -2 )
                 while ( meowest.find( "id" ) )
                     meowest = meowest.slice( 1 )
                 meowest = meowest.slice( 5 )
-                newestmessageid = meowest
+                newesttimestamp = arrayresponse[2]
 
                 if ( i == newresponse.len() - 1 )
-                    rconlast_discord_messageid = meowest
-                if ( messageid >= meowest )
+                    rconlast_discord_timestamp = newesttimestamp
+                if ( timestamp >= arrayresponse[2] )
                     nyah = true
-                if ( !nyah && arrayresponse[3].find( "\"bot\"" ) != null )
+                if ( !nyah && arrayresponse[5].find( "\"bot\"" ) != null )
                     nyah = true
                 if ( !nyah )
                 {
