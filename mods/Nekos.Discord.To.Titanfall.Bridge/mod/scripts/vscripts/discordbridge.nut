@@ -193,7 +193,7 @@ void function MessageQueue()
 	file.queue += 1
 	while ( file.realqueue < queue || file.queuetime > Time() )
 		WaitFrame()
-	file.queuetime = Time() + 0.40
+	file.queuetime = Time() + 0.50
 	file.realqueue += 1
 }
 
