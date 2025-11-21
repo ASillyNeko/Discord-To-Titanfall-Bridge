@@ -79,17 +79,12 @@ ClServer_MessageStruct function LogMessage( ClServer_MessageStruct message )
 	string prefix = ""
 	string teamstr = ""
 	string communitytag = message.player.GetCommunityClanTag().len() ? "[" + message.player.GetCommunityClanTag() + "] " : ""
-	if ( playerteam <= 0 )
-		teamstr = "Spec"
-	else if ( playerteam == 1 )
-		teamstr = "None"
-	else if ( playerteam == 2 )
+	if ( playerteam == TEAM_IMC )
 		teamstr = "IMC"
-	else if ( playerteam == 3 )
+	else if ( playerteam == TEAM_MILITIA )
 		teamstr = "Militia"
-	else
-		teamstr = "Both"
-	if ( message.isTeam )
+
+	if ( message.isTeam && !IsFFAGame() )
 		prefix = "[TEAM (" + teamstr + ")] " + communitytag + playername
 	else
 		prefix = "(" + teamstr + ") " + communitytag + playername
