@@ -313,9 +313,9 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 	if ( response.statusCode == 200 )
 	{
 		string responsebody = response.body
-		responsebody = StringReplace( responsebody, "\"message_reference\"", "\"message_reference\"", true )
+		responsebody = StringReplace( responsebody, "\"message_reference\"", "\"message_reference\"", true )
 
-		array<string> arrayresponse = split( responsebody, "" )
+		array<string> arrayresponse = split( responsebody, "" )
 		array<string> fixedresponse = []
 
 		for ( int i = 0; i < arrayresponse.len(); i++ )
@@ -326,9 +326,9 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 		for ( int i = 0; i < fixedresponse.len(); i++ )
 			responsebody += fixedresponse[i]
 
-		responsebody = StringReplace( responsebody, "},{\"type\"", "[{", true )
+		responsebody = StringReplace( responsebody, "},{\"type\"", "[{", true )
 
-		array<string> newresponse = split( responsebody, "" )
+		array<string> newresponse = split( responsebody, "" )
 
 		if ( !newresponse.len() || !newresponse[0].len() )
 			return
@@ -343,13 +343,13 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 		foreach ( string newresponsestr in newresponse )
 		{
 			responsebody = newresponsestr
-			responsebody = StringReplace( responsebody, "\"author\"", "author\"", true )
-			responsebody = StringReplace( responsebody, "\"pinned\"", "pinned\"", true )
-			responsebody = StringReplace( responsebody, "\"mentions\"", "mentions\"", true )
-			responsebody = StringReplace( responsebody, "\"channel_id\"", "channel_id\"", true )
-			responsebody = StringReplace( responsebody, "\"timestamp\":\"", "\"timestamp\":", true )
-			responsebody = StringReplace( responsebody, "\",\"edited_timestamp\"", ",\"edited_timestamp\"", true )
-			array<string> arrayresponse = split( responsebody, "" )
+			responsebody = StringReplace( responsebody, "\"author\"", "author\"", true )
+			responsebody = StringReplace( responsebody, "\"pinned\"", "pinned\"", true )
+			responsebody = StringReplace( responsebody, "\"mentions\"", "mentions\"", true )
+			responsebody = StringReplace( responsebody, "\"channel_id\"", "channel_id\"", true )
+			responsebody = StringReplace( responsebody, "\"timestamp\":\"", "\"timestamp\":", true )
+			responsebody = StringReplace( responsebody, "\",\"edited_timestamp\"", ",\"edited_timestamp\"", true )
+			array<string> arrayresponse = split( responsebody, "" )
 
 			bool nyah = false
 			if ( arrayresponse.len() != 7 )
