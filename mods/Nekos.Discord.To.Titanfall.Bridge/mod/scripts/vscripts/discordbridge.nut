@@ -195,7 +195,7 @@ void function MapChange()
 {
 	MessageQueue()
 
-	string message = "Map Changed To " + GetMapName() in MAP_NAME_TABLE ? MAP_NAME_TABLE[ GetMapName() ] : "" + " [" + GetMapName() + "]"
+	string message = "Map Changed To " + ( GetMapName() in MAP_NAME_TABLE ? MAP_NAME_TABLE[ GetMapName() ] : "" ) + " [" + GetMapName() + "]"
 	SendMessageToDiscord( message, false )
 
 	message = "```" + message + "```"
