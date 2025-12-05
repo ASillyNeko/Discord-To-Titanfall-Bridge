@@ -685,7 +685,11 @@ void function SendMessageToPlayers( string message )
 
 void function ActuallySendMessageToPlayers( entity player, string message )
 {
+	if ( !IsValid( player ) )
+		return
+
 	player.EndSignal( "OnDestroy" )
+
 	if ( !( player in file.anotherqueue ) )
 		file.anotherqueue[ player ] <- 0
 
