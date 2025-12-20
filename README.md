@@ -2,7 +2,7 @@
 
 # Titanfall To Discord
 
-Remove (https://) From Webhook Url Otherwise It'll Just Be (https://)
+If You Set The Convar In The Startup Args Remove (https://) From Webhook Url Otherwise It'll Just Be (https://)
 
 Make A Webhook By Hovering Over The Channel And Clicking On (Edit Channel) And Going To (Integrations) Then Click On (Webhooks)
 
