@@ -189,8 +189,9 @@ void function SendMessageToDiscord( string message, bool sendmessage = true, boo
 
 	if ( blockedmessage && GetConVarString( "discordbridge_commandlogwebhook" ).len() )
 		request.url = GetConVarString( "discordbridge_commandlogwebhook" )
-	
-	request.url = "https://" + request.url
+
+	if ( !( request.url.len() >= "https://".len() && request.url.slice( 0, "https://".len() ).tolower() == "https://" ) )
+		request.url = "https://" + request.url
 
 	request.body = EncodeJSON( payload )
 	request.headers = {
@@ -519,7 +520,7 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 
 				if ( !( timestamp >= arrayresponse[2] || ( arrayresponse[5].find( "\"bot\"" ) != null && !GetConVarInt( "discordbridge_allowbotsrcon" ) ) ) )
 				{
-					if ( meow.len() >= 11 && meow.slice( 0, 11 - meow.len() ).tolower() == "?rconscript" )
+					if ( meow.len() >= "?rconscript".len() && meow.slice( 0, "?rconscript".len() ).tolower() == "?rconscript" )
 					{
 						array<string> rconusers = split( GetConVarString( "discordbridge_rconusers" ), "," )
 
@@ -544,7 +545,7 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 						else
 							OrangeCircleDiscordToTitanfallBridge( meowest, GetConVarString( "discordbridge_rconchannelid" ) )
 					}
-					else if ( meow.len() >= 5 && meow.slice( 0, 5 - meow.len() ).tolower() == "?rcon" )
+					else if ( meow.len() >= "?rcon".len() && meow.slice( 0, "?rcon".len() ).tolower() == "?rcon" )
 					{
 						array<string> rconusers = split( GetConVarString( "discordbridge_rconusers" ), "," )
 
