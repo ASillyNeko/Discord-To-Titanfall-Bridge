@@ -328,12 +328,14 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 		string responsebody = response.body
 
 		responsebody = StringReplace( responsebody, "\"message_reference\"", "\"message_reference\"", true )
+		responsebody = StringReplace( responsebody, "\"mention_roles\"", "\"mention_roles\"", true )
+		responsebody = StringReplace( responsebody, "\"timestamp\":\"", "\"timestamp\":\"", true )
 
 		array<string> arrayresponse = split( responsebody, "" )
 		array<string> fixedresponse = []
 
 		for ( int i = 0; i < arrayresponse.len(); i++ )
-			if ( arrayresponse[i].find( "\"message_reference\"" ) == null )
+			if ( arrayresponse[i].find( "\"message_reference\"" ) == null && arrayresponse[i].find( "\"attachments\"" ) == null && arrayresponse[i].find( "\"embeds\"" ) == null )
 				fixedresponse.append( arrayresponse[i] )
 
 		responsebody = ""
@@ -364,7 +366,7 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 			responsebody = StringReplace( responsebody, "\"pinned\"", "pinned\"", true )
 			responsebody = StringReplace( responsebody, "\"mentions\"", "mentions\"", true )
 			responsebody = StringReplace( responsebody, "\"channel_id\"", "channel_id\"", true )
-			responsebody = StringReplace( responsebody, "\"timestamp\":\"", "\"timestamp\":", true )
+			responsebody = StringReplace( responsebody, "timestamp\":\"", "timestamp\":", true )
 			responsebody = StringReplace( responsebody, "\",\"edited_timestamp\"", ",\"edited_timestamp\"", true )
 
 			array<string> arrayresponse = split( responsebody, "" )
@@ -435,12 +437,14 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 		string responsebody = response.body
 
 		responsebody = StringReplace( responsebody, "\"message_reference\"", "\"message_reference\"", true )
+		responsebody = StringReplace( responsebody, "\"mention_roles\"", "\"mention_roles\"", true )
+		responsebody = StringReplace( responsebody, "\"timestamp\":\"", "\"timestamp\":\"", true )
 
 		array<string> arrayresponse = split( responsebody, "" )
 		array<string> fixedresponse = []
 
 		for ( int i = 0; i < arrayresponse.len(); i++ )
-			if ( arrayresponse[i].find( "\"message_reference\"" ) == null )
+			if ( arrayresponse[i].find( "\"message_reference\"" ) == null && arrayresponse[i].find( "\"attachments\"" ) == null && arrayresponse[i].find( "\"embeds\"" ) == null )
 				fixedresponse.append( arrayresponse[i] )
 
 		responsebody = ""
@@ -471,7 +475,7 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 			responsebody = StringReplace( responsebody, "\"pinned\"", "pinned\"", true )
 			responsebody = StringReplace( responsebody, "\"mentions\"", "mentions\"", true )
 			responsebody = StringReplace( responsebody, "\"channel_id\"", "channel_id\"", true )
-			responsebody = StringReplace( responsebody, "\"timestamp\":\"", "\"timestamp\":", true )
+			responsebody = StringReplace( responsebody, "timestamp\":\"", "timestamp\":", true )
 			responsebody = StringReplace( responsebody, "\",\"edited_timestamp\"", ",\"edited_timestamp\"", true )
 
 			array<string> arrayresponse = split( responsebody, "" )
