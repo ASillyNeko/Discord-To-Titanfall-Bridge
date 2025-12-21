@@ -410,7 +410,7 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 			if ( i == newresponse.len() && GetPlayerArray().len() )
 				last_discord_timestamp = newesttimestamp
 
-			if ( !( timestamp >= arrayresponse[2] || arrayresponse[5].find( "\"bot\"" ) != null ) )
+			if ( timestamp < arrayresponse[2] && arrayresponse[5].find( "\"bot\"" ) == null )
 			{
 				if ( meow.len() > 200 || meow.len() <= 0 )
 					RedCircleDiscordToTitanfallBridge( meowest, GetConVarString( "discordbridge_channelid" ) )
@@ -518,7 +518,7 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 				if ( i == newresponse.len() )
 					rconlast_discord_timestamp = newesttimestamp
 
-				if ( !( timestamp >= arrayresponse[2] || ( arrayresponse[5].find( "\"bot\"" ) != null && !GetConVarInt( "discordbridge_allowbotsrcon" ) ) ) )
+				if ( timestamp < arrayresponse[2] && ( arrayresponse[5].find( "\"bot\"" ) == null || GetConVarInt( "discordbridge_allowbotsrcon" ) ) )
 				{
 					if ( meow.len() >= "?rconscript".len() && meow.slice( 0, "?rconscript".len() ).tolower() == "?rconscript" )
 					{
