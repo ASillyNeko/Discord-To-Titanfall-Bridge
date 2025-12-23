@@ -206,7 +206,7 @@ void function MapChange()
 {
 	MessageQueue()
 
-	string message = "Map Changed To " + ( GetMapName() in MAP_NAME_TABLE ? MAP_NAME_TABLE[ GetMapName() ] : "" ) + " [" + GetMapName() + "]"
+	string message = "Map Has Changed To" + ( GetMapName() in MAP_NAME_TABLE ? ( " " + MAP_NAME_TABLE[ GetMapName() ] ) : "" ) + " [" + GetMapName() + "]"
 
 	SendMessageToDiscord( message, false )
 
@@ -224,7 +224,7 @@ void function MessageQueue()
 	while ( file.realqueue < queue || file.queuetime > Time() )
 		WaitFrame()
 
-	file.queuetime = Time() + 0.25
+	file.queuetime = Time() + 0.30
 	file.realqueue += 1
 }
 
