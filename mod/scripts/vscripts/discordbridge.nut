@@ -232,7 +232,7 @@ void function SendServerCrashedAndOrRestartedMessage()
 {
 	MessageQueue()
 
-	string message = "Server Has Crashed And Or Restarted"
+	string message = "Server Has Crashed/Restarted"
 
 	SendMessageToDiscord( message, false )
 
