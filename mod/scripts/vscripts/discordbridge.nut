@@ -11,12 +11,6 @@ void function DiscordBridge_Init_Thread()
 {
 	WaitEndFrame()
 
-	if ( GetConVarInt( "discordbridge_shouldsendmessageifservercrashandorrestart" ) )
-	{
-		SendServerCrashedAndOrRestartedMessage()
-		SetConVarInt( "discordbridge_shouldsendmessageifservercrashandorrestart", 0 )
-	}
-
 	AddCallback_OnReceivedSayTextMessage( LogMessage )
 	AddCallback_OnClientConnected( LogJoin )
 	AddCallback_OnClientDisconnected( LogDisconnect )
@@ -206,7 +200,12 @@ void function MapChange()
 {
 	MessageQueue()
 
-	string message = "Map Has Changed To" + ( GetMapName() in MAP_NAME_TABLE ? ( " " + MAP_NAME_TABLE[ GetMapName() ] ) : "" ) + " [" + GetMapName() + "]"
+	string crashmessage = GetConVarInt( "discordbridge_shouldsendmessageifservercrashandorrestart" ) ? "Server Has Crashed/Restarted\n" : ""
+
+	if ( crashmessage.len() )
+		SetConVarInt( "discordbridge_shouldsendmessageifservercrashandorrestart", 0 )
+
+	string message = crashmessage + "Map Has Changed To" + ( GetMapName() in MAP_NAME_TABLE ? ( " " + MAP_NAME_TABLE[ GetMapName() ] ) : "" ) + " [" + GetMapName() + "]"
 
 	SendMessageToDiscord( message, false )
 
@@ -226,19 +225,6 @@ void function MessageQueue()
 
 	file.queuetime = Time() + 0.30
 	file.realqueue += 1
-}
-
-void function SendServerCrashedAndOrRestartedMessage()
-{
-	MessageQueue()
-
-	string message = "Server Has Crashed/Restarted"
-
-	SendMessageToDiscord( message, false )
-
-	message = "```" + message + "```"
-
-	SendMessageToDiscord( message, true, false )
 }
 
 string last_discord_timestamp = ";"
