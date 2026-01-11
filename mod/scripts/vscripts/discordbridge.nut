@@ -200,7 +200,7 @@ void function MapChange()
 {
 	MessageQueue()
 
-	string crashmessage = GetConVarInt( "discordbridge_shouldsendmessageifservercrashandorrestart" ) ? "Server Has Crashed/Restarted\n" : ""
+	string crashmessage = GetConVarInt( "discordbridge_shouldsendmessageifservercrashandorrestart" ) ? "Server Has Crashed/Restarted\n\n" : ""
 
 	if ( crashmessage.len() )
 		SetConVarInt( "discordbridge_shouldsendmessageifservercrashandorrestart", 0 )
