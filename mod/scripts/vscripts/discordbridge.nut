@@ -4,13 +4,6 @@ global function DiscordBridge_Init
 
 void function DiscordBridge_Init()
 {
-	thread DiscordBridge_Init_Thread()
-}
-
-void function DiscordBridge_Init_Thread()
-{
-	WaitEndFrame()
-
 	AddCallback_OnReceivedSayTextMessage( LogMessage )
 	AddCallback_OnClientConnected( LogJoin )
 	AddCallback_OnClientDisconnected( LogDisconnect )
