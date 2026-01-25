@@ -7,6 +7,9 @@
 global function printl
 global function Msg
 global function CodeCallback_Precompile
+global function PrintsShowScriptLocation
+global function AddPrintHook
+global function AddPrintHookWithScriptLocation
 
 global struct EchoTestStruct
 {
@@ -373,18 +376,61 @@ global struct WeaponBulletHitParams
 	vector dir
 }
 
+struct
+{
+	bool printsshowscriptlocation = false
+	array<void functionref( var, bool )> hooks
+	array<void functionref( var, bool )> hookswithscriptlocation
+} file
+
 //-----------------------------------------------------------------------------
 // General
 //-----------------------------------------------------------------------------
 
 void function printl( var text )
 {
-	return print( text + "\n" );
+	foreach ( void functionref( var, bool ) hook in file.hooks )
+		hook( text + "\n", true )
+
+	if ( file.printsshowscriptlocation && IsValid( getstackinfos( 3 ) ) )
+	{
+		table stack = expect table ( getstackinfos( 3 ) )
+		string src = expect string ( "src" in stack ? stack[ "src" ] : "unknown" )
+		int line = expect int ( "line" in stack ? stack[ "line" ] : -1 )
+
+		foreach ( void functionref( var, bool ) hook in file.hookswithscriptlocation )
+			hook( "[" + src + ":" + line + "] " + text + "\n", true )
+
+		return print( "[" + src + ":" + line + "] " + text + "\n" )
+	}
+	else
+		foreach ( void functionref( var, bool ) hook in file.hookswithscriptlocation )
+			hook( text + "\n", true )
+
+	return print( text + "\n" )
 }
 
 void function Msg( var text )
 {
-	return print( text );
+	foreach ( void functionref( var, bool ) hook in file.hooks )
+		hook( text, false )
+
+	if ( file.printsshowscriptlocation && IsValid( getstackinfos( 3 ) ) )
+	{
+		table stack = expect table ( getstackinfos( 3 ) )
+		string src = expect string ( "src" in stack ? stack[ "src" ] : "unknown" )
+		int line = expect int ( "line" in stack ? stack[ "line" ] : -1 )
+
+		foreach ( void functionref( var, bool ) hook in file.hookswithscriptlocation )
+			hook( "[" + src + ":" + line + "] " + text, false )
+
+		return print( "[" + src + ":" + line + "] " + text )
+	}
+	else
+		foreach ( void functionref( var, bool ) hook in file.hookswithscriptlocation )
+			hook( text, false )
+
+	return print( text )
 }
 
 void function CodeCallback_Precompile()
@@ -394,5 +440,20 @@ void function CodeCallback_Precompile()
 	//if ( Dev_CommandLineHasParm( "-scriptdocs" ) )
 	//	getroottable().originalConstTable <- clone getconsttable()
 #endif
+}
+
+void function PrintsShowScriptLocation( bool enable )
+{
+	file.printsshowscriptlocation = enable
+}
+
+void function AddPrintHook( void functionref( var, bool ) hook )
+{
+	file.hooks.append( hook )
+}
+
+void function AddPrintHookWithScriptLocation( void functionref( var, bool ) hook )
+{
+	file.hookswithscriptlocation.append( hook )
 }
 

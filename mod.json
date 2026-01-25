@@ -6,11 +6,19 @@
 	"RequiredOnClient": false,
 	"ConVars": [
 		{
+			"Name": "discordbridge_printsshowscriptlocation",
+			"DefaultValue": "0"
+		},
+		{
 			"Name": "discordbridge_webhook",
 			"DefaultValue": ""
 		},
 		{
 			"Name": "discordbridge_commandlogwebhook",
+			"DefaultValue": ""
+		},
+		{
+			"Name": "discordbridge_consolelogwebhook",
 			"DefaultValue": ""
 		},
 		{
@@ -47,7 +55,8 @@
 			"Path": "discordbridge.nut",
 			"RunOn": "SERVER",
 			"ServerCallback": {
-				"After": "DiscordBridge_Init"
+				"After": "DiscordBridge_Init",
+				"Before": "DiscordBridgeConsoleLog_Init"
 			}
 		}
 	]

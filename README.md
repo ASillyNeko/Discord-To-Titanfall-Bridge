@@ -1,5 +1,11 @@
 [Discord Server](https://ds.asillyneko.dev)
 
+# Random Things
+
+Shows The Script Location Of Prints In Console
+
+`discordbridge_printshowscriptlocation`
+
 # Titanfall To Discord
 
 If You Set The Convar In The Startup Args Remove (https://) From Webhook Url Otherwise It'll Just Be (https://)
@@ -15,6 +21,10 @@ Required To Send Messages To Discord
 Sends Messages That `discordbridge_webhook` Didn't Send
 
 `discordbridge_commandlogwebhook`
+
+Logs **SOME** Server Prints
+
+`discordbridge_consolelogwebhook`
 
 Sends ```Server Has Crashed And Or Restarted``` To `discordbridge_webhook` On Startup
 
