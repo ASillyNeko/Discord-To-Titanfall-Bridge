@@ -249,7 +249,12 @@ void function SendMessageToDiscord( string message, string webhook, bool sendmes
 		[ "User-Agent" ] = [ "DiscordToTitanfallBridge" ]
 	}
 
-	NSHttpRequest( request )
+	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure failure )
+	{
+		print( "[DiscordBridge] Request Failed: " + failure.errorMessage )
+	}
+
+	NSHttpRequest( request, null, onFailure )
 }
 
 void function MapChange()
