@@ -187,12 +187,12 @@ void function LogDisconnect( entity player )
 
 void function LogPrints( var text, bool hasnewline )
 {
-	var clonedtext = text
+	string clonedtext = expect string( text )
 
 	if ( hasnewline )
-		clonedtext = clonedtext.slice( 0, text.len() - "\n".len() )
+		clonedtext = clonedtext.slice( 0, clonedtext.len() - "\n".len() )
 
-	file.logprints += expect string ( file.logprints.len() ? "\n" + clonedtext.tostring() : clonedtext.tostring() )
+	file.logprints += file.logprints.len() ? "\n" + clonedtext : clonedtext
 }
 
 void function LogHandle()
