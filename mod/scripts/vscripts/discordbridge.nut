@@ -117,13 +117,7 @@ ClServer_MessageStruct function LogMessage( ClServer_MessageStruct message )
 
 	MessageQueue()
 
-	string console_message = prefix + ": " + msg
-
-	SendMessageToDiscord( console_message, "", false )
-
-	string discord_message = "**" + prefix + ":** " + msg
-
-	SendMessageToDiscord( discord_message, ( message.shouldBlock ? file.commandlogwebhook : file.webhook ), true, false )
+	SendMessageToDiscord( "**" + prefix + ":** " + msg, ( message.shouldBlock ? file.commandlogwebhook : file.webhook ) )
 
 	return message
 }
@@ -149,11 +143,7 @@ void function LogJoin( entity player )
 
 	MessageQueue()
 
-	SendMessageToDiscord( message, "", false )
-
-	message = "```" + message + "```"
-
-	SendMessageToDiscord( message, file.webhook, true, false )
+	SendMessageToDiscord( "```" + message + "```", file.webhook )
 }
 
 void function LogDisconnect( entity player )
@@ -178,11 +168,7 @@ void function LogDisconnect( entity player )
 
 	MessageQueue()
 
-	SendMessageToDiscord( message, "", false )
-
-	message = "```" + message + "```"
-
-	SendMessageToDiscord( message, file.webhook, true, false )
+	SendMessageToDiscord( "```" + message + "```", file.webhook )
 }
 
 void function LogPrints( var text, bool hasnewline )
@@ -213,19 +199,16 @@ void function LogHandle()
 			if ( logprints.len() >= 1950 )
 				logprints = logprints.slice( 0, 1950 )
 
-			SendMessageToDiscord( "```" + logprints + "```", file.consolelogwebhook, true, false )
+			SendMessageToDiscord( "```" + logprints + "```", file.consolelogwebhook )
 
 			file.logprints = file.logprints.slice( logprints.len() )
 		}
 	}
 }
 
-void function SendMessageToDiscord( string message, string webhook, bool sendmessage = true, bool printmessage = true, bool blockedmessage = false )
+void function SendMessageToDiscord( string message, string webhook )
 {
-	if ( printmessage )
-		print( "[DiscordBridge] Messaging Discord Users: " + message )
-
-	if ( !sendmessage || !webhook.len() )
+	if ( !webhook.len() )
 		return
 
 	table payload = {
@@ -268,11 +251,7 @@ void function MapChange()
 
 	string message = crashmessage + "Map Has Changed To" + ( GetMapName() in MAP_NAME_TABLE ? ( " " + MAP_NAME_TABLE[ GetMapName() ] ) : "" ) + " [" + GetMapName() + "]"
 
-	SendMessageToDiscord( message, "", false )
-
-	message = "```" + message + "```"
-
-	SendMessageToDiscord( message, file.webhook, true, false )
+	SendMessageToDiscord( "```" + message + "```", file.webhook )
 }
 
 void function MessageQueue()
