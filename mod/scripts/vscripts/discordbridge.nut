@@ -392,6 +392,8 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 			responsebody = StringReplace( responsebody, "\"pinned\"", "pinned\"", true )
 			responsebody = StringReplace( responsebody, "\"mentions\"", "mentions\"", true )
 			responsebody = StringReplace( responsebody, "\"channel_id\"", "channel_id\"", true )
+			responsebody = StringReplace( responsebody, "timestamp\":\"", "timestamp\":", true )
+			responsebody = StringReplace( responsebody, "\",\"edited_timestamp\"", ",\"edited_timestamp\"", true )
 
 			array<string> arrayresponse = split( responsebody, "" )
 
@@ -545,7 +547,7 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 			if ( i == newresponse.len() )
 				rconlast_discord_timestamp = newesttimestamp
 
-			if ( lasttimestamp < newesttimestamp && ( arrayresponse[3].find( "\"bot\"" ) == null || file.allowbotsrcon ) )
+			if ( lasttimestamp < newesttimestamp && ( arrayresponse[5].find( "\"bot\"" ) == null || file.allowbotsrcon ) )
 			{
 				if ( message.len() >= "?rconscript".len() && message.slice( 0, "?rconscript".len() ).tolower() == "?rconscript" )
 				{
