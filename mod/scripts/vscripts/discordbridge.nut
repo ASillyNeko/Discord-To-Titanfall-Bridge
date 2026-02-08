@@ -234,7 +234,7 @@ void function SendMessageToDiscord( string message, string webhook )
 
 	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure failure )
 	{
-		print( "[DiscordBridge] Request Failed: " + failure.errorMessage )
+		printt( "[DiscordBridge] Request Failed: " + failure.errorMessage )
 	}
 
 	NSHttpRequest( request, null, onFailure )
@@ -267,8 +267,8 @@ void function MessageQueue()
 	file.realqueue += 1
 }
 
-string last_discord_timestamp = ";"
-string rconlast_discord_timestamp = ";"
+string last_discord_messageid = ";"
+string rconlast_discord_messageid = ";"
 
 void function DiscordMessagePoller()
 {
@@ -289,7 +289,7 @@ void function DiscordMessagePoller()
 		}
 		else
 		{
-			last_discord_timestamp = ";"
+			last_discord_messageid = ";"
 
 			if ( file.rconchannelid.len() )
 				RconPollDiscordMessages()
@@ -317,7 +317,7 @@ void function PollDiscordMessages()
 
 	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure failure )
 	{
-		print( "[DiscordBridge] Request Failed: " + failure.errorMessage )
+		printt( "[DiscordBridge] Request Failed: " + failure.errorMessage )
 	}
 
 	NSHttpRequest( request, onSuccess, onFailure )
@@ -341,7 +341,7 @@ void function RconPollDiscordMessages()
 
 	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure failure )
 	{
-		print( "[DiscordBridge] Request Failed: " + failure.errorMessage )
+		printt( "[DiscordBridge] Request Failed: " + failure.errorMessage )
 	}
 
 	NSHttpRequest( request, onSuccess, onFailure )
@@ -376,8 +376,8 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 		if ( !newresponse.len() || !newresponse[0].len() )
 			return
 
-		string timestamp = last_discord_timestamp
-		string newesttimestamp = ""
+		string lastmessageid = last_discord_messageid
+		string newestmessageid = ""
 
 		newresponse.reverse()
 
@@ -392,17 +392,15 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 			responsebody = StringReplace( responsebody, "\"pinned\"", "pinned\"", true )
 			responsebody = StringReplace( responsebody, "\"mentions\"", "mentions\"", true )
 			responsebody = StringReplace( responsebody, "\"channel_id\"", "channel_id\"", true )
-			responsebody = StringReplace( responsebody, "timestamp\":\"", "timestamp\":", true )
-			responsebody = StringReplace( responsebody, "\",\"edited_timestamp\"", ",\"edited_timestamp\"", true )
 
 			array<string> arrayresponse = split( responsebody, "" )
 
-			if ( arrayresponse.len() != 7 && i == newresponse.len() && GetPlayerArray().len() )
+			if ( arrayresponse.len() != 5 && i == newresponse.len() && GetPlayerArray().len() )
 			{
-				if ( !newesttimestamp.len() )
-					last_discord_timestamp = "/"
+				if ( !newestmessageid.len() )
+					last_discord_messageid = "/"
 				else
-					last_discord_timestamp = newesttimestamp
+					last_discord_messageid = newestmessageid
 
 				continue
 			}
@@ -418,14 +416,14 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 			message = StringReplace( message, "\\\"", "\"", true )
 			message = StringReplace( message, "\\\\", "\\", true )
 
-			string userid = arrayresponse[5]
+			string userid = arrayresponse[3]
 
 			userid = userid.slice( 15 )
 
 			while ( userid.find( "\"" ) )
 				userid = userid.slice( 0, -1 )
 
-			string messageid = arrayresponse[3]
+			string messageid = arrayresponse[1]
 
 			messageid = messageid.slice( 0, -2 )
 
@@ -433,12 +431,12 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 				messageid = messageid.slice( 1 )
 
 			messageid = messageid.slice( 5 )
-			newesttimestamp = arrayresponse[2]
+			newestmessageid = messageid
 
 			if ( i == newresponse.len() && GetPlayerArray().len() )
-				last_discord_timestamp = newesttimestamp
+				last_discord_messageid = newestmessageid
 
-			if ( timestamp < arrayresponse[2] && arrayresponse[5].find( "\"bot\"" ) == null )
+			if ( lastmessageid < messageid && arrayresponse[3].find( "\"bot\"" ) == null )
 			{
 				if ( message.len() > 200 || message.len() <= 0 )
 					RedCircleDiscordToTitanfallBridge( messageid, file.channelid )
@@ -451,8 +449,8 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 	}
 	else
 	{
-		print( "[DiscordBridge] Request Failed With Status: " + response.statusCode.tostring() )
-		print( "[DiscordBridge] Response Body: " + response.body )
+		printt( "[DiscordBridge] Request Failed With Status: " + response.statusCode.tostring() )
+		printt( "[DiscordBridge] Response Body: " + response.body )
 	}
 }
 
@@ -485,8 +483,8 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 		if ( !newresponse.len() || !newresponse[0].len() )
 			return
 
-		string timestamp = rconlast_discord_timestamp
-		string newesttimestamp = ""
+		string lastmessageid = rconlast_discord_messageid
+		string newestmessageid = ""
 
 		newresponse.reverse()
 
@@ -501,108 +499,105 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 			responsebody = StringReplace( responsebody, "\"pinned\"", "pinned\"", true )
 			responsebody = StringReplace( responsebody, "\"mentions\"", "mentions\"", true )
 			responsebody = StringReplace( responsebody, "\"channel_id\"", "channel_id\"", true )
-			responsebody = StringReplace( responsebody, "timestamp\":\"", "timestamp\":", true )
-			responsebody = StringReplace( responsebody, "\",\"edited_timestamp\"", ",\"edited_timestamp\"", true )
 
 			array<string> arrayresponse = split( responsebody, "" )
 
-			if ( arrayresponse.len() != 7 && i == newresponse.len() )
+			if ( arrayresponse.len() != 5 && i == newresponse.len() )
 			{
-				if ( !newesttimestamp.len() )
-					rconlast_discord_timestamp = "/"
+				if ( !newestmessageid.len() )
+					rconlast_discord_messageid = "/"
 				else
-					rconlast_discord_timestamp = newesttimestamp
+					rconlast_discord_messageid = newestmessageid
 
 				continue
 			}
 
-				string message = arrayresponse[0]
+			string message = arrayresponse[0]
 
-				message = message.slice( 0, -2 )
+			message = message.slice( 0, -2 )
 
-				while ( message.find( ":\"" ) )
-					message = message.slice( 1 )
+			while ( message.find( ":\"" ) )
+				message = message.slice( 1 )
 
-				message = message.slice( 2 )
-				message = StringReplace( message, "\\\"", "\"", true )
-				message = StringReplace( message, "\\\\", "\\", true )
+			message = message.slice( 2 )
+			message = StringReplace( message, "\\\"", "\"", true )
+			message = StringReplace( message, "\\\\", "\\", true )
 
-				string userid = arrayresponse[5]
+			string userid = arrayresponse[3]
 
-				userid = userid.slice( 15 )
+			userid = userid.slice( 15 )
 
-				while ( userid.find( "\"" ) )
-					userid = userid.slice( 0, -1 )
+			while ( userid.find( "\"" ) )
+				userid = userid.slice( 0, -1 )
 
-				string messageid = arrayresponse[3]
+			string messageid = arrayresponse[1]
 
-				messageid = messageid.slice( 0, -2 )
+			messageid = messageid.slice( 0, -2 )
 
-				while ( messageid.find( "id" ) )
-					messageid = messageid.slice( 1 )
+			while ( messageid.find( "id" ) )
+				messageid = messageid.slice( 1 )
 
-				messageid = messageid.slice( 5 )
+			messageid = messageid.slice( 5 )
+			newestmessageid = messageid
 
-				newesttimestamp = arrayresponse[2]
+			if ( i == newresponse.len() )
+				rconlast_discord_messageid = newestmessageid
 
-				if ( i == newresponse.len() )
-					rconlast_discord_timestamp = newesttimestamp
-
-				if ( timestamp < arrayresponse[2] && ( arrayresponse[5].find( "\"bot\"" ) == null || file.allowbotsrcon ) )
+			if ( lastmessageid < messageid && ( arrayresponse[3].find( "\"bot\"" ) == null || file.allowbotsrcon ) )
+			{
+				if ( message.len() >= "?rconscript".len() && message.slice( 0, "?rconscript".len() ).tolower() == "?rconscript" )
 				{
-					if ( message.len() >= "?rconscript".len() && message.slice( 0, "?rconscript".len() ).tolower() == "?rconscript" )
+					array<string> rconusers = split( file.rconusers, "," )
+
+					bool shouldruncommand = false
+
+					for ( int i = 0; i < rconusers.len(); i++ )
+						if ( rconusers[i] == userid )
+							shouldruncommand = true
+
+					if ( shouldruncommand || !rconusers.len() )
 					{
-						array<string> rconusers = split( file.rconusers, "," )
+						printt( "[DiscordBridge] Running Rcon Script Sent By: " + userid + ": " + message )
 
-						bool shouldruncommand = false
-
-						for ( int i = 0; i < rconusers.len(); i++ )
-							if ( rconusers[i] == userid )
-								shouldruncommand = true
-
-						if ( shouldruncommand || !rconusers.len() )
+						try
 						{
-							print( "[DiscordBridge] Running Rcon Script Sent By: " + userid + ": " + message )
-
-							try
-							{
-								thread compilestring( message.slice( 11 ) )()
-								GreenCircleDiscordToTitanfallBridge( messageid, file.rconchannelid )
-							}
-							catch ( error )
-								RedCircleDiscordToTitanfallBridge( messageid, file.rconchannelid )
-						}
-						else
-							OrangeCircleDiscordToTitanfallBridge( messageid, file.rconchannelid )
-					}
-					else if ( message.len() >= "?rcon".len() && message.slice( 0, "?rcon".len() ).tolower() == "?rcon" )
-					{
-						array<string> rconusers = split( file.rconusers, "," )
-
-						bool shouldruncommand = false
-
-						for ( int i = 0; i < rconusers.len(); i++ )
-							if ( rconusers[i] == userid )
-								shouldruncommand = true
-
-						if ( shouldruncommand || !rconusers.len() )
-						{
+							thread compilestring( message.slice( 11 ) )()
 							GreenCircleDiscordToTitanfallBridge( messageid, file.rconchannelid )
-							print( "[DiscordBridge] Running Rcon Command Sent By: " + userid + ": " + message )
-							ServerCommand( message.slice( 5 ) )
 						}
-						else
-							OrangeCircleDiscordToTitanfallBridge( messageid, file.rconchannelid )
+						catch ( error )
+							RedCircleDiscordToTitanfallBridge( messageid, file.rconchannelid )
 					}
-
-					wait 0.25
+					else
+						OrangeCircleDiscordToTitanfallBridge( messageid, file.rconchannelid )
 				}
+				else if ( message.len() >= "?rcon".len() && message.slice( 0, "?rcon".len() ).tolower() == "?rcon" )
+				{
+					array<string> rconusers = split( file.rconusers, "," )
+
+					bool shouldruncommand = false
+
+					for ( int i = 0; i < rconusers.len(); i++ )
+						if ( rconusers[i] == userid )
+							shouldruncommand = true
+
+					if ( shouldruncommand || !rconusers.len() )
+					{
+						GreenCircleDiscordToTitanfallBridge( messageid, file.rconchannelid )
+						printt( "[DiscordBridge] Running Rcon Command Sent By: " + userid + ": " + message )
+						ServerCommand( message.slice( 5 ) )
+					}
+					else
+						OrangeCircleDiscordToTitanfallBridge( messageid, file.rconchannelid )
+				}
+
+				wait 0.25
+			}
 		}
 	}
 	else
 	{
-		print( "[DiscordBridge] Request Failed With Status: " + response.statusCode.tostring() )
-		print( "[DiscordBridge] Response Body: " + response.body )
+		printt( "[DiscordBridge] Request Failed With Status: " + response.statusCode.tostring() )
+		printt( "[DiscordBridge] Response Body: " + response.body )
 	}
 }
 
@@ -641,14 +636,14 @@ void function GetUserNickname( string userid )
 		}
 		else
 		{
-			print( "[DiscordBridge] Request Failed With Status: " + response.statusCode.tostring() )
-			print( "[DiscordBridge] Response Body: " + response.body )
+			printt( "[DiscordBridge] Request Failed With Status: " + response.statusCode.tostring() )
+			printt( "[DiscordBridge] Response Body: " + response.body )
 		}
 	}
 
 	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure failure )
 	{
-		print( "[DiscordBridge] Request Failed: " + failure.errorMessage )
+		printt( "[DiscordBridge] Request Failed: " + failure.errorMessage )
 	}
 
 	NSHttpRequest( request, onSuccess, onFailure )
@@ -704,7 +699,7 @@ void function EndThreadDiscordToTitanfallBridge( string message, string userid, 
 	GetUserNickname( userid )
 	userid = GetUserTrueNickname( userid )
 
-	print( "[DiscordBridge] Messaging Players: [Discord] " + userid + ": " + message )
+	printt( "[DiscordBridge] Messaging Players: [Discord] " + userid + ": " + message )
 	SendMessageToPlayers( "[38;2;88;101;242m" + "[Discord] " + userid + ": \x1b[0m" + message )
 	GreenCircleDiscordToTitanfallBridge( messageid, file.channelid )
 }
@@ -724,14 +719,14 @@ void function RedCircleDiscordToTitanfallBridge( string messageid, string channe
 	{
 		if ( response.statusCode != 204 )
 		{
-			print( "[DiscordBridge] Request Failed With Status: " + response.statusCode.tostring() )
-			print( "[DiscordBridge] Response Body: " + response.body )
+			printt( "[DiscordBridge] Request Failed With Status: " + response.statusCode.tostring() )
+			printt( "[DiscordBridge] Response Body: " + response.body )
 		}
 	}
 
 	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure failure )
 	{
-		print( "[DiscordBridge] Request Failed: " + failure.errorMessage )
+		printt( "[DiscordBridge] Request Failed: " + failure.errorMessage )
 	}
 
 	NSHttpRequest( request, onSuccess, onFailure )
@@ -752,14 +747,14 @@ void function OrangeCircleDiscordToTitanfallBridge( string messageid, string cha
 	{
 		if ( response.statusCode != 204 )
 		{
-			print( "[DiscordBridge] Request Failed With Status: " + response.statusCode.tostring() )
-			print( "[DiscordBridge] Response Body: " + response.body )
+			printt( "[DiscordBridge] Request Failed With Status: " + response.statusCode.tostring() )
+			printt( "[DiscordBridge] Response Body: " + response.body )
 		}
 	}
 
 	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure failure )
 	{
-		print( "[DiscordBridge] Request Failed: " + failure.errorMessage )
+		printt( "[DiscordBridge] Request Failed: " + failure.errorMessage )
 	}
 
 	NSHttpRequest( request, onSuccess, onFailure )
@@ -780,14 +775,14 @@ void function GreenCircleDiscordToTitanfallBridge( string messageid, string chan
 	{
 		if ( response.statusCode != 204 )
 		{
-			print( "[DiscordBridge] Request Failed With Status: " + response.statusCode.tostring() )
-			print( "[DiscordBridge] Response Body: " + response.body )
+			printt( "[DiscordBridge] Request Failed With Status: " + response.statusCode.tostring() )
+			printt( "[DiscordBridge] Response Body: " + response.body )
 		}
 	}
 
 	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure failure )
 	{
-		print( "[DiscordBridge] Request Failed: " + failure.errorMessage )
+		printt( "[DiscordBridge] Request Failed: " + failure.errorMessage )
 	}
 
 	NSHttpRequest( request, onSuccess, onFailure )
