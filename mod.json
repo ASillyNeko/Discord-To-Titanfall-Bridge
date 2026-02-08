@@ -2,7 +2,7 @@
 	"Name": "Neko's Discord To Titanfall Bridge",
 	"Description": "Bridges Discord And Titanfall 2 Messages",
 	"Version": "1.0.0",
-	"LoadPriority": 20,
+	"LoadPriority": 21,
 	"RequiredOnClient": false,
 	"ConVars": [
 		{
