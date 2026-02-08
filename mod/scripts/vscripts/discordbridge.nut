@@ -267,8 +267,8 @@ void function MessageQueue()
 	file.realqueue += 1
 }
 
-string last_discord_timestamp = ";"
-string rconlast_discord_timestamp = ";"
+string last_discord_messageid = ";"
+string rconlast_discord_messageid = ";"
 
 void function DiscordMessagePoller()
 {
@@ -289,7 +289,7 @@ void function DiscordMessagePoller()
 		}
 		else
 		{
-			last_discord_timestamp = ";"
+			last_discord_messageid = ";"
 
 			if ( file.rconchannelid.len() )
 				RconPollDiscordMessages()
@@ -304,7 +304,7 @@ void function PollDiscordMessages()
 	HttpRequest request
 
 	request.method = HttpRequestMethod.GET
-	request.url = "https://discord.com/api/v9/channels/" + file.channelid + "/messages?limit=5"
+	request.url = "https://discord.com/api/v9/channels/" + file.channelid + "/messages?limit=5" + ( last_discord_messageid != ";" && last_discord_messageid != "/" ? "&after=" + last_discord_messageid : "" )
 	request.headers = {
 		[ "Authorization" ] = [ "Bot " + file.bottoken ],
 		[ "User-Agent" ] = [ "DiscordToTitanfallBridge" ]
@@ -328,7 +328,7 @@ void function RconPollDiscordMessages()
 	HttpRequest request
 
 	request.method = HttpRequestMethod.GET
-	request.url = "https://discord.com/api/v9/channels/" + file.rconchannelid + "/messages?limit=5"
+	request.url = "https://discord.com/api/v9/channels/" + file.rconchannelid + "/messages?limit=5" + ( rconlast_discord_messageid != ";" && rconlast_discord_messageid != "/" ? "&after=" + rconlast_discord_messageid : "" )
 	request.headers = {
 		[ "Authorization" ] = [ "Bot " + file.bottoken ],
 		[ "User-Agent" ] = [ "DiscordToTitanfallBridge" ]
@@ -373,11 +373,11 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 
 		array<string> newresponse = split( responsebody, "" )
 
-		if ( !newresponse.len() || !newresponse[0].len() )
+		if ( !newresponse.len() || newresponse[0].len() <= 3 )
 			return
 
-		string lasttimestamp = last_discord_timestamp
-		string newesttimestamp = ""
+		string lastmessageid = last_discord_messageid
+		string newestmessageid = ""
 
 		newresponse.reverse()
 
@@ -392,17 +392,18 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 			responsebody = StringReplace( responsebody, "\"pinned\"", "pinned\"", true )
 			responsebody = StringReplace( responsebody, "\"mentions\"", "mentions\"", true )
 			responsebody = StringReplace( responsebody, "\"channel_id\"", "channel_id\"", true )
-			responsebody = StringReplace( responsebody, "timestamp\":\"", "timestamp\":", true )
-			responsebody = StringReplace( responsebody, "\",\"edited_timestamp\"", ",\"edited_timestamp\"", true )
 
 			array<string> arrayresponse = split( responsebody, "" )
 
-			if ( arrayresponse.len() != 7 && i == newresponse.len() && GetPlayerArray().len() )
+			if ( arrayresponse.len() != 5 )
 			{
-				if ( !newesttimestamp.len() )
-					last_discord_timestamp = "/"
-				else
-					last_discord_timestamp = newesttimestamp
+				if ( i == newresponse.len() )
+				{
+					if ( !newestmessageid.len() )
+						last_discord_messageid = "/"
+					else
+						last_discord_messageid = newestmessageid
+				}
 
 				continue
 			}
@@ -418,14 +419,14 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 			message = StringReplace( message, "\\\"", "\"", true )
 			message = StringReplace( message, "\\\\", "\\", true )
 
-			string userid = arrayresponse[5]
+			string userid = arrayresponse[3]
 
 			userid = userid.slice( 15 )
 
 			while ( userid.find( "\"" ) )
 				userid = userid.slice( 0, -1 )
 
-			string messageid = arrayresponse[3]
+			string messageid = arrayresponse[1]
 
 			messageid = messageid.slice( 0, -2 )
 
@@ -433,12 +434,12 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 				messageid = messageid.slice( 1 )
 
 			messageid = messageid.slice( 5 )
-			newesttimestamp = arrayresponse[2]
+			newestmessageid = messageid
 
-			if ( i == newresponse.len() && GetPlayerArray().len() )
-				last_discord_timestamp = newesttimestamp
+			if ( i == newresponse.len() )
+				last_discord_messageid = newestmessageid
 
-			if ( lasttimestamp < newesttimestamp && arrayresponse[5].find( "\"bot\"" ) == null )
+			if ( lastmessageid < newestmessageid && lastmessageid != newestmessageid && arrayresponse[3].find( "\"bot\"" ) == null && GetPlayerArray().len() )
 			{
 				if ( message.len() > 200 || message.len() <= 0 )
 					RedCircleDiscordToTitanfallBridge( messageid, file.channelid )
@@ -482,11 +483,11 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 
 		array<string> newresponse = split( responsebody, "" )
 
-		if ( !newresponse.len() || !newresponse[0].len() )
+		if ( !newresponse.len() || newresponse[0].len() <= 3 )
 			return
 
-		string lasttimestamp = rconlast_discord_timestamp
-		string newesttimestamp = ""
+		string lastmessageid = rconlast_discord_messageid
+		string newestmessageid = ""
 
 		newresponse.reverse()
 
@@ -501,17 +502,18 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 			responsebody = StringReplace( responsebody, "\"pinned\"", "pinned\"", true )
 			responsebody = StringReplace( responsebody, "\"mentions\"", "mentions\"", true )
 			responsebody = StringReplace( responsebody, "\"channel_id\"", "channel_id\"", true )
-			responsebody = StringReplace( responsebody, "timestamp\":\"", "timestamp\":", true )
-			responsebody = StringReplace( responsebody, "\",\"edited_timestamp\"", ",\"edited_timestamp\"", true )
 
 			array<string> arrayresponse = split( responsebody, "" )
 
-			if ( arrayresponse.len() != 7 && i == newresponse.len() )
+			if ( arrayresponse.len() != 5 )
 			{
-				if ( !newesttimestamp.len() )
-					rconlast_discord_timestamp = "/"
-				else
-					rconlast_discord_timestamp = newesttimestamp
+				if ( i == newresponse.len() )
+				{
+					if ( !newestmessageid.len() )
+						rconlast_discord_messageid = "/"
+					else
+						rconlast_discord_messageid = newestmessageid
+				}
 
 				continue
 			}
@@ -527,14 +529,14 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 			message = StringReplace( message, "\\\"", "\"", true )
 			message = StringReplace( message, "\\\\", "\\", true )
 
-			string userid = arrayresponse[5]
+			string userid = arrayresponse[3]
 
 			userid = userid.slice( 15 )
 
 			while ( userid.find( "\"" ) )
 				userid = userid.slice( 0, -1 )
 
-			string messageid = arrayresponse[3]
+			string messageid = arrayresponse[1]
 
 			messageid = messageid.slice( 0, -2 )
 
@@ -542,12 +544,12 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 				messageid = messageid.slice( 1 )
 
 			messageid = messageid.slice( 5 )
-			newesttimestamp = arrayresponse[2]
+			newestmessageid = messageid
 
 			if ( i == newresponse.len() )
-				rconlast_discord_timestamp = newesttimestamp
+				rconlast_discord_messageid = newestmessageid
 
-			if ( lasttimestamp < newesttimestamp && ( arrayresponse[5].find( "\"bot\"" ) == null || file.allowbotsrcon ) )
+			if ( lastmessageid < newestmessageid && ( arrayresponse[3].find( "\"bot\"" ) == null || file.allowbotsrcon ) )
 			{
 				if ( message.len() >= "?rconscript".len() && message.slice( 0, "?rconscript".len() ).tolower() == "?rconscript" )
 				{
@@ -666,8 +668,8 @@ string function GetUserTrueNickname( string userid )
 
 void function SendMessageToPlayers( string message )
 {
-	for ( int i = 0; i < GetPlayerArray().len(); i++ )
-		thread ActuallySendMessageToPlayers( GetPlayerArray()[i], message )
+	foreach ( entity player in GetPlayerArray() )
+		thread ActuallySendMessageToPlayers( player, message )
 }
 
 void function ActuallySendMessageToPlayers( entity player, string message )
@@ -702,6 +704,9 @@ void function EndThreadDiscordToTitanfallBridge( string message, string userid, 
 {
 	GetUserNickname( userid )
 	userid = GetUserTrueNickname( userid )
+
+	if ( !GetPlayerArray().len() )
+		return
 
 	printt( "[DiscordBridge] Messaging Players: [Discord] " + userid + ": " + message )
 	SendMessageToPlayers( "[38;2;88;101;242m" + "[Discord] " + userid + ": \x1b[0m" + message )
