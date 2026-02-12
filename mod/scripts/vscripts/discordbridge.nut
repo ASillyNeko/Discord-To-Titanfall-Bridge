@@ -304,7 +304,7 @@ void function PollDiscordMessages()
 	HttpRequest request
 
 	request.method = HttpRequestMethod.GET
-	request.url = "https://discord.com/api/v9/channels/" + file.channelid + "/messages?limit=5" + ( last_discord_messageid != ";" && last_discord_messageid != "/" ? "&after=" + last_discord_messageid : "" )
+	request.url = "https://discord.com/api/v9/channels/" + file.channelid + "/messages?limit=5" + ( last_discord_messageid != ";" ? "&after=" + last_discord_messageid : "" )
 	request.headers = {
 		[ "Authorization" ] = [ "Bot " + file.bottoken ],
 		[ "User-Agent" ] = [ "DiscordToTitanfallBridge" ]
@@ -328,7 +328,7 @@ void function RconPollDiscordMessages()
 	HttpRequest request
 
 	request.method = HttpRequestMethod.GET
-	request.url = "https://discord.com/api/v9/channels/" + file.rconchannelid + "/messages?limit=5" + ( rconlast_discord_messageid != ";" && rconlast_discord_messageid != "/" ? "&after=" + rconlast_discord_messageid : "" )
+	request.url = "https://discord.com/api/v9/channels/" + file.rconchannelid + "/messages?limit=5" + ( rconlast_discord_messageid != ";" ? "&after=" + rconlast_discord_messageid : "" )
 	request.headers = {
 		[ "Authorization" ] = [ "Bot " + file.bottoken ],
 		[ "User-Agent" ] = [ "DiscordToTitanfallBridge" ]
@@ -354,20 +354,34 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 		string responsebody = response.body
 
 		responsebody = StringReplace( responsebody, "\"message_reference\"", "\"message_reference\"", true )
-		responsebody = StringReplace( responsebody, "\"mention_roles\"", "\"mention_roles\"", true )
-		responsebody = StringReplace( responsebody, "\"timestamp\":\"", "\"timestamp\":\"", true )
+		responsebody = StringReplace( responsebody, "},{\"type\"", "},{\"type\"", true )
 
 		array<string> arrayresponse = split( responsebody, "" )
 		array<string> fixedresponse = []
 
-		for ( int i = 0; i < arrayresponse.len(); i++ )
-			if ( arrayresponse[i].find( "\"message_reference\"" ) == null && arrayresponse[i].find( "\"attachments\"" ) == null && arrayresponse[i].find( "\"embeds\"" ) == null )
-				fixedresponse.append( arrayresponse[i] )
+		foreach ( string fixresponse in arrayresponse )
+			if ( fixresponse.find( "\"message_reference\"" ) == null )
+				fixedresponse.append( fixresponse )
 
 		responsebody = ""
 
-		for ( int i = 0; i < fixedresponse.len(); i++ )
-			responsebody += fixedresponse[i]
+		foreach ( string fixresponse in fixedresponse )
+			responsebody += fixresponse
+
+		responsebody = StringReplace( responsebody, "\"mention_roles\"", "\"mention_roles\"", true )
+		responsebody = StringReplace( responsebody, "\"timestamp\":\"", "\"timestamp\":\"", true )
+
+		arrayresponse = split( responsebody, "" )
+		fixedresponse = []
+
+		foreach ( string fixresponse in arrayresponse )
+			if ( fixresponse.find( "\"attachments\"" ) == null && fixresponse.find( "\"embeds\"" ) == null )
+				fixedresponse.append( fixresponse )
+
+		responsebody = ""
+
+		foreach ( string fixresponse in fixedresponse )
+			responsebody += fixresponse
 
 		responsebody = StringReplace( responsebody, "},{\"type\"", "[{", true )
 
@@ -393,14 +407,14 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 			responsebody = StringReplace( responsebody, "\"mentions\"", "mentions\"", true )
 			responsebody = StringReplace( responsebody, "\"channel_id\"", "channel_id\"", true )
 
-			array<string> arrayresponse = split( responsebody, "" )
+			arrayresponse = split( responsebody, "" )
 
 			if ( arrayresponse.len() != 5 )
 			{
 				if ( i == newresponse.len() )
 				{
 					if ( !newestmessageid.len() )
-						last_discord_messageid = "/"
+						last_discord_messageid = "0"
 					else
 						last_discord_messageid = newestmessageid
 				}
@@ -464,20 +478,34 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 		string responsebody = response.body
 
 		responsebody = StringReplace( responsebody, "\"message_reference\"", "\"message_reference\"", true )
-		responsebody = StringReplace( responsebody, "\"mention_roles\"", "\"mention_roles\"", true )
-		responsebody = StringReplace( responsebody, "\"timestamp\":\"", "\"timestamp\":\"", true )
+		responsebody = StringReplace( responsebody, "},{\"type\"", "},{\"type\"", true )
 
 		array<string> arrayresponse = split( responsebody, "" )
 		array<string> fixedresponse = []
 
-		for ( int i = 0; i < arrayresponse.len(); i++ )
-			if ( arrayresponse[i].find( "\"message_reference\"" ) == null && arrayresponse[i].find( "\"attachments\"" ) == null && arrayresponse[i].find( "\"embeds\"" ) == null )
-				fixedresponse.append( arrayresponse[i] )
+		foreach ( string fixresponse in arrayresponse )
+			if ( fixresponse.find( "\"message_reference\"" ) == null )
+				fixedresponse.append( fixresponse )
 
 		responsebody = ""
 
-		for ( int i = 0; i < fixedresponse.len(); i++ )
-			responsebody += fixedresponse[i]
+		foreach ( string fixresponse in fixedresponse )
+			responsebody += fixresponse
+
+		responsebody = StringReplace( responsebody, "\"mention_roles\"", "\"mention_roles\"", true )
+		responsebody = StringReplace( responsebody, "\"timestamp\":\"", "\"timestamp\":\"", true )
+
+		arrayresponse = split( responsebody, "" )
+		fixedresponse = []
+
+		foreach ( string fixresponse in arrayresponse )
+			if ( fixresponse.find( "\"attachments\"" ) == null && fixresponse.find( "\"embeds\"" ) == null )
+				fixedresponse.append( fixresponse )
+
+		responsebody = ""
+
+		foreach ( string fixresponse in fixedresponse )
+			responsebody += fixresponse
 
 		responsebody = StringReplace( responsebody, "},{\"type\"", "[{", true )
 
@@ -503,14 +531,14 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 			responsebody = StringReplace( responsebody, "\"mentions\"", "mentions\"", true )
 			responsebody = StringReplace( responsebody, "\"channel_id\"", "channel_id\"", true )
 
-			array<string> arrayresponse = split( responsebody, "" )
+			arrayresponse = split( responsebody, "" )
 
 			if ( arrayresponse.len() != 5 )
 			{
 				if ( i == newresponse.len() )
 				{
 					if ( !newestmessageid.len() )
-						rconlast_discord_messageid = "/"
+						rconlast_discord_messageid = "0"
 					else
 						rconlast_discord_messageid = newestmessageid
 				}
