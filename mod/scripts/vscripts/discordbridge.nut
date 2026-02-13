@@ -388,7 +388,12 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 		array<string> newresponse = split( responsebody, "" )
 
 		if ( !newresponse.len() || newresponse[0].len() <= 3 )
+		{
+			if ( last_discord_messageid == "/" )
+				last_discord_messageid = "0"
+
 			return
+		}
 
 		string lastmessageid = last_discord_messageid
 		string newestmessageid = ""
@@ -512,7 +517,12 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 		array<string> newresponse = split( responsebody, "" )
 
 		if ( !newresponse.len() || newresponse[0].len() <= 3 )
+		{
+			if ( rconlast_discord_messageid == "/" )
+				rconlast_discord_messageid = "0"
+
 			return
+		}
 
 		string lastmessageid = rconlast_discord_messageid
 		string newestmessageid = ""
