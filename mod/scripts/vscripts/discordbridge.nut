@@ -110,7 +110,7 @@ ClServer_MessageStruct function LogMessage( ClServer_MessageStruct message )
 	else if ( playerteam == TEAM_MILITIA )
 		teamstr = "Militia"
 
-	if ( message.isTeam && !IsFFAGame() && GetCurrentPlaylistVarInt( "max_teams", 2 ) == 2 )
+	if ( message.isTeam && GetCurrentPlaylistVarInt( "max_teams", 2 ) == 2 )
 		prefix = "[TEAM (" + teamstr + ")] " + ( message.shouldBlock ? "(HIDDEN) " : "" ) + communitytag + playername
 	else
 		prefix = "(" + teamstr + ") " + ( message.shouldBlock ? "(HIDDEN) " : "" ) + communitytag + playername
