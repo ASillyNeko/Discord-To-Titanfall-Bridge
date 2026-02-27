@@ -3,7 +3,7 @@ untyped
 global function DiscordBridge_Init
 global function DiscordBridgeConsoleLog_Init
 
-table<string, string> MAP_NAME_TABLE = {
+table< string, string > MAP_NAME_TABLE = {
 	mp_lobby = "Lobby",
 	mp_angel_city = "Angel City",
 	mp_black_water_canal = "Black Water Canal",
@@ -48,10 +48,10 @@ struct
 	int realqueue = 0
 	float queuetime = 0
 
-	table<entity, int> anotherqueue
-	table<entity, int> anotherrealqueue
-	table<entity, bool> haseverbeenalive
-	table<string, string> namelist
+	table< entity, int > anotherqueue
+	table< entity, int > anotherrealqueue
+	table< string, string > namelist
+	table< string, bool > uniquestringrequestdone
 
 	string logprints = ""
 } file
@@ -63,7 +63,6 @@ void function DiscordBridge_Init()
 	AddCallback_OnClientDisconnected( LogDisconnect )
 	thread MapChange()
 
-	AddCallback_OnPlayerRespawned( HasEverBeenAlive )
 	thread DiscordMessagePoller()
 }
 
@@ -232,9 +231,9 @@ void function SendMessageToDiscord( string message, string webhook )
 		[ "User-Agent" ] = [ "DiscordToTitanfallBridge" ]
 	}
 
-	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure failure )
+	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure response )
 	{
-		printt( "[DiscordBridge] Request Failed: " + failure.errorMessage )
+		printt( "[DiscordBridge] Request Failed: " + response.errorMessage )
 	}
 
 	NSHttpRequest( request, null, onFailure )
@@ -315,9 +314,9 @@ void function PollDiscordMessages()
 		thread ThreadDiscordToTitanfallBridge( response )
 	}
 
-	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure failure )
+	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure response )
 	{
-		printt( "[DiscordBridge] Request Failed: " + failure.errorMessage )
+		printt( "[DiscordBridge] Request Failed: " + response.errorMessage )
 	}
 
 	NSHttpRequest( request, onSuccess, onFailure )
@@ -339,9 +338,9 @@ void function RconPollDiscordMessages()
 		thread RconThreadDiscordToTitanfallBridge( response )
 	}
 
-	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure failure )
+	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure response )
 	{
-		printt( "[DiscordBridge] Request Failed: " + failure.errorMessage )
+		printt( "[DiscordBridge] Request Failed: " + response.errorMessage )
 	}
 
 	NSHttpRequest( request, onSuccess, onFailure )
@@ -389,7 +388,7 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 
 		if ( !newresponse.len() || newresponse[0].len() <= 3 )
 		{
-			if ( last_discord_messageid == "/" )
+			if ( last_discord_messageid == ";" )
 				last_discord_messageid = "0"
 
 			return
@@ -404,6 +403,9 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 
 		foreach ( string newresponsestr in newresponse )
 		{
+			if ( !GetPlayerArray().len() )
+				return
+
 			i += 1
 
 			responsebody = newresponsestr
@@ -429,38 +431,53 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 
 			string message = arrayresponse[0]
 
-			message = message.slice( 0, -2 )
+			message = message.slice( 0, 0 - "\",".len() )
 
-			while ( message.find( ":\"" ) )
+			while ( message.find( ":\"" ) != null )
 				message = message.slice( 1 )
 
-			message = message.slice( 2 )
+			message = message.slice( "\"".len() )
 			message = StringReplace( message, "\\\"", "\"", true )
 			message = StringReplace( message, "\\\\", "\\", true )
 
+			while ( message.find( "\\u" ) != null )
+			{
+				var idx = message.find( "\\u" )
+
+				message = message.slice( 0, idx ) + message.slice( idx + 6 )
+			}
+
+			while ( message.len() && message.slice( message.len() - 1 ) == " " )
+				message = message.slice( 0, message.len() - 1 )
+
+			while ( message.len() && message.slice( 0, 1 - message.len() ) == " " )
+				message = message.slice( 1 )
+
 			string userid = arrayresponse[3]
 
-			userid = userid.slice( 15 )
+			while ( userid.find( "\"id\":\"" ) != null )
+				userid = userid.slice( 1 )
 
-			while ( userid.find( "\"" ) )
-				userid = userid.slice( 0, -1 )
+			userid = userid.slice( "id\":\"".len() )
+
+			while ( userid.find( "\"" ) != null )
+				userid = userid.slice( 0, 0 - "\"".len() )
 
 			string messageid = arrayresponse[1]
 
-			messageid = messageid.slice( 0, -2 )
+			messageid = messageid.slice( 0, 0 - "\",".len() )
 
-			while ( messageid.find( "id" ) )
+			while ( messageid.find( "\"" ) != null )
 				messageid = messageid.slice( 1 )
 
-			messageid = messageid.slice( 5 )
 			newestmessageid = messageid
 
 			if ( i == newresponse.len() )
 				last_discord_messageid = newestmessageid
 
-			if ( lastmessageid < newestmessageid && lastmessageid != newestmessageid && arrayresponse[3].find( "\"bot\"" ) == null && GetPlayerArray().len() )
+			if ( lastmessageid < newestmessageid && lastmessageid != newestmessageid && arrayresponse[3].find( "\"bot\"" ) == null )
 			{
-				if ( message.len() > 200 || message.len() <= 0 )
+				if ( message.len() > 200 || !message.len() )
 					RedCircleDiscordToTitanfallBridge( messageid, file.channelid )
 				else
 					thread EndThreadDiscordToTitanfallBridge( message, userid, messageid )
@@ -518,7 +535,7 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 
 		if ( !newresponse.len() || newresponse[0].len() <= 3 )
 		{
-			if ( rconlast_discord_messageid == "/" )
+			if ( rconlast_discord_messageid == ";" )
 				rconlast_discord_messageid = "0"
 
 			return
@@ -558,30 +575,45 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 
 			string message = arrayresponse[0]
 
-			message = message.slice( 0, -2 )
+			message = message.slice( 0, 0 - "\",".len() )
 
-			while ( message.find( ":\"" ) )
+			while ( message.find( ":\"" ) != null )
 				message = message.slice( 1 )
 
-			message = message.slice( 2 )
+			message = message.slice( "\"".len() )
 			message = StringReplace( message, "\\\"", "\"", true )
 			message = StringReplace( message, "\\\\", "\\", true )
 
+			while ( message.find( "\\u" ) != null )
+			{
+				var idx = message.find( "\\u" )
+
+				message = message.slice( 0, idx ) + message.slice( idx + 6 )
+			}
+
+			while ( message.len() && message.slice( message.len() - 1 ) == " " )
+				message = message.slice( 0, message.len() - 1 )
+
+			while ( message.len() && message.slice( 0, 1 - message.len() ) == " " )
+				message = message.slice( 1 )
+
 			string userid = arrayresponse[3]
 
-			userid = userid.slice( 15 )
+			while ( userid.find( "\"id\":\"" ) != null )
+				userid = userid.slice( 1 )
 
-			while ( userid.find( "\"" ) )
-				userid = userid.slice( 0, -1 )
+			userid = userid.slice( "id\":\"".len() )
+
+			while ( userid.find( "\"" ) != null )
+				userid = userid.slice( 0, 0 - "\"".len() )
 
 			string messageid = arrayresponse[1]
 
-			messageid = messageid.slice( 0, -2 )
+			messageid = messageid.slice( 0, 0 - "\",".len() )
 
-			while ( messageid.find( "id" ) )
+			while ( messageid.find( "\"" ) != null )
 				messageid = messageid.slice( 1 )
 
-			messageid = messageid.slice( 5 )
 			newestmessageid = messageid
 
 			if ( i == newresponse.len() )
@@ -605,7 +637,7 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 
 						try
 						{
-							thread compilestring( message.slice( 11 ) )()
+							thread compilestring( message.slice( "?rconscript".len() ) )()
 							GreenCircleDiscordToTitanfallBridge( messageid, file.rconchannelid )
 						}
 						catch ( error )
@@ -628,7 +660,7 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 					{
 						GreenCircleDiscordToTitanfallBridge( messageid, file.rconchannelid )
 						printt( "[DiscordBridge] Running Rcon Command Sent By: " + userid + ": " + message )
-						ServerCommand( message.slice( 5 ) )
+						ServerCommand( message.slice( "?rcon".len() ) )
 					}
 					else
 						OrangeCircleDiscordToTitanfallBridge( messageid, file.rconchannelid )
@@ -645,8 +677,12 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 	}
 }
 
-void function GetUserNickname( string userid )
+string function GetUserNicknameRequest( string userid )
 {
+	string uniquestring = UniqueString()
+
+	file.uniquestringrequestdone[ uniquestring ] <- false
+
 	HttpRequest request
 
 	request.method = HttpRequestMethod.GET
@@ -656,7 +692,7 @@ void function GetUserNickname( string userid )
 		[ "User-Agent" ] = [ "DiscordToTitanfallBridge" ]
 	}
 
-	void functionref( HttpRequestResponse ) onSuccess = void function ( HttpRequestResponse response ) : ( userid )
+	void functionref( HttpRequestResponse ) onSuccess = void function ( HttpRequestResponse response ) : ( userid, uniquestring )
 	{
 		if ( response.statusCode == 200 )
 		{
@@ -669,33 +705,98 @@ void function GetUserNickname( string userid )
 
 			array<string> newresponse = split( responsebody, "" )
 
-			string message = newresponse[1]
+			string name = newresponse[1].find( "\"," ) != null ? newresponse[1].slice( "nick\":\"".len(), 0 - "\",".len() ) : ""
 
-			message = StringReplace( message, "nick\":", "" )
+			if ( name.len() )
+			{
+				while ( name.find( "\\u" ) != null )
+				{
+					var idx = name.find( "\\u" )
 
-			if ( message.find( "\"," ) )
-				file.namelist[ userid ] <- message.slice( 1, -2 )
-			else if ( newresponse[3].find( "name" ) )
-				file.namelist[ userid ] <- newresponse[3].slice( 14, -2 )
+					name = name.slice( 0, idx ) + name.slice( idx + 6 )
+				}
+
+				while ( name.len() && name.slice( name.len() - 1 ) == " " )
+					name = name.slice( 0, name.len() - 1 )
+
+				while ( name.len() && name.slice( 0, 1 - name.len() ) == " " )
+					name = name.slice( 1 )
+
+				name = StringReplace( name, "\\\"", "\"", true )
+				name = StringReplace( name, "\\\\", "\\", true )
+			}
+
+			if ( !name.len() && newresponse[3].find( "global_name" ) != null )
+			{
+				name = newresponse[3].slice( "global_name\":\"".len(), 0 - "\",".len() )
+
+				while ( name.find( "\\u" ) != null )
+				{
+					var idx = name.find( "\\u" )
+
+					name = name.slice( 0, idx ) + name.slice( idx + 6 )
+				}
+
+				while ( name.len() && name.slice( name.len() - 1 ) == " " )
+					name = name.slice( 0, name.len() - 1 )
+
+				while ( name.len() && name.slice( 0, 1 - name.len() ) == " " )
+					name = name.slice( 1 )
+
+				name = StringReplace( name, "\\\"", "\"", true )
+				name = StringReplace( name, "\\\\", "\\", true )
+			}
+
+			if ( !name.len() )
+			{
+				name = newresponse[2]
+
+				while ( name.find( "\",\"avatar\"" ) != null )
+					name = name.slice( 0, -1 )
+
+				name = name.slice( 0, 0 - "\",\"avatar".len() )
+
+				while ( name.find( "\"" ) != null )
+					name = name.slice( "\"".len() )
+			}
+
+			file.namelist[ userid ] <- name
+
+			if ( uniquestring in file.uniquestringrequestdone )
+				file.uniquestringrequestdone[ uniquestring ] <- true
 		}
 		else
 		{
 			printt( "[DiscordBridge] Request Failed With Status: " + response.statusCode.tostring() )
 			printt( "[DiscordBridge] Response Body: " + response.body )
+
+			if ( uniquestring in file.uniquestringrequestdone )
+				file.uniquestringrequestdone[ uniquestring ] <- true
 		}
 	}
 
-	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure failure )
+	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure response ) : ( uniquestring )
 	{
-		printt( "[DiscordBridge] Request Failed: " + failure.errorMessage )
+		printt( "[DiscordBridge] Request Failed: " + response.errorMessage )
+
+		if ( uniquestring in file.uniquestringrequestdone )
+			file.uniquestringrequestdone[ uniquestring ] <- true
 	}
 
 	NSHttpRequest( request, onSuccess, onFailure )
+
+	return uniquestring
 }
 
-string function GetUserTrueNickname( string userid )
+string function GetUserNickname( string userid )
 {
-	wait 0.75
+	string uniquestring = GetUserNicknameRequest( userid )
+	float timeOut = Time() + 0.75
+
+	while ( !file.uniquestringrequestdone[ uniquestring ] && Time() < timeOut )
+		WaitFrame()
+
+	delete file.uniquestringrequestdone[ uniquestring ]
 
 	if ( userid in file.namelist )
 		return file.namelist[ userid ]
@@ -707,10 +808,10 @@ string function GetUserTrueNickname( string userid )
 void function SendMessageToPlayers( string message )
 {
 	foreach ( entity player in GetPlayerArray() )
-		thread ActuallySendMessageToPlayers( player, message )
+		thread SendMessageToPlayer( player, message )
 }
 
-void function ActuallySendMessageToPlayers( entity player, string message )
+void function SendMessageToPlayer( entity player, string message )
 {
 	if ( !IsValid( player ) )
 		return
@@ -728,10 +829,10 @@ void function ActuallySendMessageToPlayers( entity player, string message )
 	if ( file.anotherrealqueue[ player ] < queue )
 		WaitFrame()
 
-	while ( !IsAlive( player ) && player in file.haseverbeenalive && file.haseverbeenalive[ player ] )
+	while ( player.IsWatchingKillReplay() )
 		WaitFrame()
 
-	wait 0.1
+	WaitFrame()
 
 	file.anotherrealqueue[ player ] += 1
 
@@ -740,14 +841,15 @@ void function ActuallySendMessageToPlayers( entity player, string message )
 
 void function EndThreadDiscordToTitanfallBridge( string message, string userid, string messageid )
 {
-	GetUserNickname( userid )
-	userid = GetUserTrueNickname( userid )
+	userid = GetUserNickname( userid )
 
 	if ( !GetPlayerArray().len() )
 		return
 
-	printt( "[DiscordBridge] Messaging Players: [Discord] " + userid + ": " + message )
-	SendMessageToPlayers( "[38;2;88;101;242m" + "[Discord] " + userid + ": \x1b[0m" + message )
+	string nonewlinemessage = StringReplace( message, "\\n", " ", true )
+
+	printt( "[DiscordBridge] Messaging Players: [Discord] " + userid + ": " + nonewlinemessage )
+	SendMessageToPlayers( "[38;2;88;101;242m" + "[Discord] " + userid + ": \x1b[0m" + nonewlinemessage )
 	GreenCircleDiscordToTitanfallBridge( messageid, file.channelid )
 }
 
@@ -771,9 +873,9 @@ void function RedCircleDiscordToTitanfallBridge( string messageid, string channe
 		}
 	}
 
-	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure failure )
+	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure response )
 	{
-		printt( "[DiscordBridge] Request Failed: " + failure.errorMessage )
+		printt( "[DiscordBridge] Request Failed: " + response.errorMessage )
 	}
 
 	NSHttpRequest( request, onSuccess, onFailure )
@@ -799,9 +901,9 @@ void function OrangeCircleDiscordToTitanfallBridge( string messageid, string cha
 		}
 	}
 
-	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure failure )
+	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure response )
 	{
-		printt( "[DiscordBridge] Request Failed: " + failure.errorMessage )
+		printt( "[DiscordBridge] Request Failed: " + response.errorMessage )
 	}
 
 	NSHttpRequest( request, onSuccess, onFailure )
@@ -827,15 +929,10 @@ void function GreenCircleDiscordToTitanfallBridge( string messageid, string chan
 		}
 	}
 
-	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure failure )
+	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure response )
 	{
-		printt( "[DiscordBridge] Request Failed: " + failure.errorMessage )
+		printt( "[DiscordBridge] Request Failed: " + response.errorMessage )
 	}
 
 	NSHttpRequest( request, onSuccess, onFailure )
-}
-
-void function HasEverBeenAlive( entity player )
-{
-	file.haseverbeenalive[ player ] <- true
 }
