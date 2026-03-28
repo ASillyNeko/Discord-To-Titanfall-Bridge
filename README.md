@@ -20,7 +20,7 @@ Required To Send Messages To Discord
 
 Sends Messages That `discordbridge_webhook` Didn't Send
 
-`discordbridge_commandlogwebhook`
+`discordbridge_blockedmessagewebhook`
 
 Logs **SOME** Server Prints
 
