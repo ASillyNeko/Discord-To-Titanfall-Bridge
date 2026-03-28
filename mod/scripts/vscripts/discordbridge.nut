@@ -33,7 +33,7 @@ table< string, string > MAP_NAME_TABLE = {
 struct
 {
 	string webhook = ""
-	string commandlogwebhook = ""
+	string blockedmessagewebhook = ""
 	string consolelogwebhook = ""
 	bool crashmessage = false
 
@@ -69,7 +69,7 @@ void function DiscordBridge_Init()
 void function DiscordBridgeConsoleLog_Init()
 {
 	file.webhook = GetConVarString( "discordbridge_webhook" )
-	file.commandlogwebhook = GetConVarString( "discordbridge_commandlogwebhook" )
+	file.blockedmessagewebhook = GetConVarString( "discordbridge_blockedmessagewebhook" )
 	file.consolelogwebhook = GetConVarString( "discordbridge_consolelogwebhook" )
 	file.crashmessage = GetConVarBool( "discordbridge_shouldsendmessageifservercrashandorrestart" )
 
@@ -116,7 +116,7 @@ ClServer_MessageStruct function LogMessage( ClServer_MessageStruct message )
 
 	MessageQueue()
 
-	SendMessageToDiscord( "**" + prefix + ":** " + msg, ( message.shouldBlock ? file.commandlogwebhook : file.webhook ) )
+	SendMessageToDiscord( "**" + prefix + ":** " + msg, ( message.shouldBlock ? file.blockedmessagewebhook : file.webhook ) )
 
 	return message
 }

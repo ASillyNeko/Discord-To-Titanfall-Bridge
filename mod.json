@@ -14,7 +14,7 @@
 			"DefaultValue": ""
 		},
 		{
-			"Name": "discordbridge_commandlogwebhook",
+			"Name": "discordbridge_blockedmessagewebhook",
 			"DefaultValue": ""
 		},
 		{
