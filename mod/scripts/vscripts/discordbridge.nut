@@ -80,8 +80,10 @@ void function DiscordBridgeConsoleLog_Init()
 	file.rconusers = GetConVarString( "discordbridge_rconusers" )
 	file.allowbotsrcon = GetConVarBool( "discordbridge_allowbotsrcon" )
 
+	PrintsShowUnixTimestamp( GetConVarBool( "discordbridge_printsshowsunixtimestamp" ) )
+	PrintsShowInGameTime( GetConVarBool( "discordbridge_printsshowingametime" ) )
 	PrintsShowScriptLocation( GetConVarBool( "discordbridge_printsshowscriptlocation" ) )
-	AddPrintHookWithScriptLocation( LogPrints )
+	AddPrintHookWithExtraInfo( LogPrints )
 	thread LogHandle()
 }
 

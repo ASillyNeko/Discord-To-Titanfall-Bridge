@@ -1,3 +1,4 @@
+untyped
 //========== Copyright � 2008, Valve Corporation, All rights reserved. ========
 //  Purpose: Script initially run after squirrel VM is initialized
 //
@@ -7,9 +8,11 @@
 global function printl
 global function Msg
 global function CodeCallback_Precompile
+global function PrintsShowUnixTimestamp
+global function PrintsShowInGameTime
 global function PrintsShowScriptLocation
 global function AddPrintHook
-global function AddPrintHookWithScriptLocation
+global function AddPrintHookWithExtraInfo
 
 global struct EchoTestStruct
 {
@@ -376,61 +379,53 @@ global struct WeaponBulletHitParams
 	vector dir
 }
 
-struct
-{
-	bool printsshowscriptlocation = false
-	array<void functionref( var, bool )> hooks
-	array<void functionref( var, bool )> hookswithscriptlocation
-} file
-
 //-----------------------------------------------------------------------------
 // General
 //-----------------------------------------------------------------------------
 
+struct
+{
+	bool printsshowunixtimestamp = false
+	bool printsshowingametime = false
+	bool printsshowscriptlocation = false
+	array<void functionref( var, bool )> hooks
+	array<void functionref( var, bool )> hookswithextrainfo
+} file
+
 void function printl( var text )
 {
-	foreach ( void functionref( var, bool ) hook in file.hooks )
-		hook( text + "\n", true )
-
-	if ( file.printsshowscriptlocation && IsValid( getstackinfos( 3 ) ) )
-	{
-		table stack = expect table ( getstackinfos( 3 ) )
-		string src = expect string ( "src" in stack ? stack[ "src" ] : "unknown" )
-		int line = expect int ( "line" in stack ? stack[ "line" ] : -1 )
-
-		foreach ( void functionref( var, bool ) hook in file.hookswithscriptlocation )
-			hook( "[" + src + ":" + line + "] " + text + "\n", true )
-
-		return print( "[" + src + ":" + line + "] " + text + "\n" )
-	}
-	else
-		foreach ( void functionref( var, bool ) hook in file.hookswithscriptlocation )
-			hook( text + "\n", true )
-
-	return print( text + "\n" )
+	return printmessage( text, false )
 }
 
 void function Msg( var text )
 {
+	return printmessage( text, false )
+}
+
+void function printmessage( var text, bool usenewline )
+{
+	string newline = usenewline ? "\n" : ""
+	string unixtimestamp = file.printsshowunixtimestamp ? ( "[" + expect int ( compilestring( "return GetUnixTimestamp()" )() ) + "] " ) : ""
+	string ingametime = file.printsshowingametime ? ( "[" + expect float ( compilestring( "return Time()" )() ) + "] " ) : ""
+
+	table stack
+
+	if ( IsValid( getstackinfos( 4 ) ) )
+		stack = expect table ( getstackinfos( 4 ) )
+	else if ( IsValid( getstackinfos( 3 ) ) )
+		stack = expect table ( getstackinfos( 3 ) )
+
+	string printscriptlocation = file.printsshowscriptlocation ? ( "[" + expect string ( "src" in stack ? stack[ "src" ] : "unknown" ) + ":" + expect int ( "line" in stack ? stack[ "line" ] : -1 ) + "] " ) : ""
+
+	string printmessage = unixtimestamp + ingametime + printscriptlocation + text + newline
+
 	foreach ( void functionref( var, bool ) hook in file.hooks )
-		hook( text, false )
+		hook( text + newline, usenewline )
 
-	if ( file.printsshowscriptlocation && IsValid( getstackinfos( 3 ) ) )
-	{
-		table stack = expect table ( getstackinfos( 3 ) )
-		string src = expect string ( "src" in stack ? stack[ "src" ] : "unknown" )
-		int line = expect int ( "line" in stack ? stack[ "line" ] : -1 )
+	foreach ( void functionref( var, bool ) hook in file.hookswithextrainfo )
+		hook( printmessage, usenewline )
 
-		foreach ( void functionref( var, bool ) hook in file.hookswithscriptlocation )
-			hook( "[" + src + ":" + line + "] " + text, false )
-
-		return print( "[" + src + ":" + line + "] " + text )
-	}
-	else
-		foreach ( void functionref( var, bool ) hook in file.hookswithscriptlocation )
-			hook( text, false )
-
-	return print( text )
+	return print( printmessage )
 }
 
 void function CodeCallback_Precompile()
@@ -440,6 +435,16 @@ void function CodeCallback_Precompile()
 	//if ( Dev_CommandLineHasParm( "-scriptdocs" ) )
 	//	getroottable().originalConstTable <- clone getconsttable()
 #endif
+}
+
+void function PrintsShowUnixTimestamp( bool enable )
+{
+	file.printsshowunixtimestamp = enable
+}
+
+void function PrintsShowInGameTime( bool enable )
+{
+	file.printsshowingametime = enable
 }
 
 void function PrintsShowScriptLocation( bool enable )
@@ -452,8 +457,8 @@ void function AddPrintHook( void functionref( var, bool ) hook )
 	file.hooks.append( hook )
 }
 
-void function AddPrintHookWithScriptLocation( void functionref( var, bool ) hook )
+void function AddPrintHookWithExtraInfo( void functionref( var, bool ) hook )
 {
-	file.hookswithscriptlocation.append( hook )
+	file.hookswithextrainfo.append( hook )
 }
 

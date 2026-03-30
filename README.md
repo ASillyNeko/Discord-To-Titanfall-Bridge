@@ -2,7 +2,15 @@
 
 # Random Things
 
-Shows The Script Location Of Prints In Console
+Prints Show Unix Timestamp
+
+`discordbridge_printsshowsunixtimestamp`
+
+Prints Show In Game Time
+
+`discordbridge_printsshowingametime`
+
+Shows The Script Location Of Prints
 
 `discordbridge_printshowscriptlocation`
 
