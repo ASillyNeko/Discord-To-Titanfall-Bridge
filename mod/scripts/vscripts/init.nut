@@ -1,9 +1,9 @@
 untyped
-//========== Copyright � 2008, Valve Corporation, All rights reserved. ========
+// ========== Copyright � 2008, Valve Corporation, All rights reserved. ========
 //  Purpose: Script initially run after squirrel VM is initialized
 //
 //  !!!NOTE: Reference script only; changes made to this script will not work in game.
-//=============================================================================
+// =============================================================================
 
 global function printl
 global function Msg
@@ -21,7 +21,7 @@ global struct EchoTestStruct
 	bool test3
 	float test4
 	vector test5
-	int[5] test6
+	int[ 5 ] test6
 }
 
 global struct TraceResults
@@ -147,11 +147,11 @@ global struct CommunityMembership
 global struct CommunityFriends
 {
 	bool isValid
-	array<string>  ids
-	array<string>  names
+	array<string> ids
+	array<string> names
 }
 
-global struct  CommunityFriendsData
+global struct CommunityFriendsData
 {
 	string id
 	string name
@@ -161,7 +161,7 @@ global struct  CommunityFriendsData
 global struct CommunityFriendsWithPresence
 {
 	bool isValid
-	array<CommunityFriendsData>  friends
+	array<CommunityFriendsData> friends
 }
 
 global struct CommunityUserInfo
@@ -207,7 +207,6 @@ global struct OpenInvite
 	array<PartyMember> members
 }
 
-
 global struct Party
 {
 	string partyType
@@ -249,7 +248,7 @@ global struct RemoteMatchInfo
 	int maxScore
 	array<RemoteClientInfoFromMatchInfo> clients
 	array<int> teamScores
-};
+}
 
 global struct InboxMessage
 {
@@ -273,24 +272,24 @@ global struct InboxMessage
 
 global struct MainMenuPromos
 {
-	int version,
+	int version
 
-	int newInfo_ImageIndex,
-	string newInfo_Title1,
-	string newInfo_Title2,
-	string newInfo_Title3,
+	int newInfo_ImageIndex
+	string newInfo_Title1
+	string newInfo_Title2
+	string newInfo_Title3
 
-	int largeButton_ImageIndex,
-	string largeButton_Title,
-	string largeButton_Url,
-	string largeButton_Text,
+	int largeButton_ImageIndex
+	string largeButton_Title
+	string largeButton_Url
+	string largeButton_Text
 
-	int smallButton1_ImageIndex,
-	string smallButton1_Title,
-	string smallButton1_Url,
+	int smallButton1_ImageIndex
+	string smallButton1_Title
+	string smallButton1_Url
 
-	int smallButton2_ImageIndex,
-	string smallButton2_Title,
+	int smallButton2_ImageIndex
+	string smallButton2_Title
 	string smallButton2_Url
 }
 
@@ -327,11 +326,11 @@ global struct LevelTransitionStruct
 
 	int startPointIndex
 
-	int[3] ints
+	int[ 3 ] ints
 
-	int[2] pilot_mainWeapons = [-1,-1]
-	int[2] pilot_offhandWeapons = [-1,-1]
-	int ornull[2] pilot_weaponMods = [null,null]
+	int[ 2 ] pilot_mainWeapons = [ -1, -1 ]
+	int[ 2 ] pilot_offhandWeapons = [ -1, -1 ]
+	int ornull[ 2 ] pilot_weaponMods = [ null, null ]
 	int pilot_ordnanceAmmo = -1
 
 	int titan_mainWeapon = -1
@@ -343,11 +342,11 @@ global struct LevelTransitionStruct
 
 	bool pilotHasBattery
 
-	//timeshift
+	// timeshift
 	bool timeshiftKilledLobbyMarvin = false
 	int timeshiftMostRecentTimeline
 	int boyleAudioLogsCollected = 0
-	int[5] boyleAudioLogNumberAssignments = [ 0, 0, 0, 0, 0 ]
+	int[ 5 ] boyleAudioLogNumberAssignments = [ 0, 0, 0, 0, 0 ]
 }
 
 global struct WeaponOwnerChangedParams
@@ -379,9 +378,9 @@ global struct WeaponBulletHitParams
 	vector dir
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 // General
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 struct
 {
@@ -405,17 +404,19 @@ void function Msg( var text )
 void function printmessage( var text, bool usenewline )
 {
 	string newline = usenewline ? "\n" : ""
-	string unixtimestamp = file.printsshowunixtimestamp ? ( "[" + expect int ( compilestring( "return GetUnixTimestamp()" )() ) + "] " ) : ""
-	string ingametime = file.printsshowingametime ? ( "[" + expect float ( compilestring( "return Time()" )() ) + "] " ) : ""
+	string unixtimestamp = file.printsshowunixtimestamp ? ( "[" + expect int( compilestring( "return GetUnixTimestamp()" )() ) + "] " ) : ""
+	string ingametime = file.printsshowingametime ? ( "[" + expect float( compilestring( "return Time()" )() ) + "] " ) : ""
 
 	table stack
 
 	if ( IsValid( getstackinfos( 4 ) ) )
-		stack = expect table ( getstackinfos( 4 ) )
+		stack = expect table( getstackinfos( 4 ) )
 	else if ( IsValid( getstackinfos( 3 ) ) )
-		stack = expect table ( getstackinfos( 3 ) )
+		stack = expect table( getstackinfos( 3 ) )
 
-	string printscriptlocation = file.printsshowscriptlocation ? ( "[" + expect string ( "src" in stack ? stack[ "src" ] : "unknown" ) + ":" + expect int ( "line" in stack ? stack[ "line" ] : -1 ) + "] " ) : ""
+	string printscriptlocation = file.printsshowscriptlocation
+		? ( "[" + expect string( "src" in stack ? stack[ "src" ] : "unknown" ) + ":" + expect int( "line" in stack ? stack[ "line" ] : -1 ) + "] " )
+		: ""
 
 	string printmessage = unixtimestamp + ingametime + printscriptlocation + text + newline
 
@@ -430,11 +431,11 @@ void function printmessage( var text, bool usenewline )
 
 void function CodeCallback_Precompile()
 {
-#if DEV
-	// save the const table for later printing when documenting code consts
-	//if ( Dev_CommandLineHasParm( "-scriptdocs" ) )
-	//	getroottable().originalConstTable <- clone getconsttable()
-#endif
+	#if DEV
+		// save the const table for later printing when documenting code consts
+		// if ( Dev_CommandLineHasParm( "-scriptdocs" ) )
+		// 	getroottable().originalConstTable <- clone getconsttable()
+	#endif
 }
 
 void function PrintsShowUnixTimestamp( bool enable )

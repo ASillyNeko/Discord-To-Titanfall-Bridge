@@ -3,7 +3,7 @@ untyped
 global function DiscordBridge_Init
 global function DiscordBridgeConsoleLog_Init
 
-table< string, string > MAP_NAME_TABLE = {
+table<string, string> MAP_NAME_TABLE = {
 	mp_lobby = "Lobby",
 	mp_angel_city = "Angel City",
 	mp_black_water_canal = "Black Water Canal",
@@ -48,10 +48,10 @@ struct
 	int realqueue = 0
 	float queuetime = 0
 
-	table< entity, int > anotherqueue
-	table< entity, int > anotherrealqueue
-	table< string, string > namelist
-	table< string, bool > uniquestringrequestdone
+	table<entity, int> anotherqueue
+	table<entity, int> anotherrealqueue
+	table<string, string> namelist
+	table<string, bool> uniquestringrequestdone
 
 	string logprints = ""
 } file
@@ -140,7 +140,8 @@ void function LogJoin( entity player )
 		uid = player.GetUID()
 	}
 
-	string message = playername + "[" + uid + "] Has (Re)Connected [Currently Connected Players " + GetPlayerArray().len() + "/" + GetCurrentPlaylistVarInt( "max_players", 16 ) + "]"
+	string message = playername + "[" + uid + "] Has (Re)Connected [Currently Connected Players " + GetPlayerArray().len() + "/" +
+		GetCurrentPlaylistVarInt( "max_players", 16 ) + "]"
 
 	MessageQueue()
 
@@ -165,7 +166,8 @@ void function LogDisconnect( entity player )
 	}
 
 	int playercount = GetPlayerArray().len() - 1
-	string message = playername + "[" + uid + "] Has Disconnected [Currently Connected Players " + playercount + "/" + GetCurrentPlaylistVarInt( "max_players", 16 ) + "]"
+	string message = playername + "[" + uid + "] Has Disconnected [Currently Connected Players " + playercount + "/" +
+		GetCurrentPlaylistVarInt( "max_players", 16 ) + "]"
 
 	MessageQueue()
 
@@ -212,12 +214,7 @@ void function SendMessageToDiscord( string message, string webhook )
 	if ( !webhook.len() )
 		return
 
-	table payload = {
-		content = message
-		allowed_mentions = {
-			parse = []
-		}
-	}
+	table payload = { content = message, allowed_mentions = { parse = [] } }
 
 	HttpRequest request
 
@@ -228,12 +225,9 @@ void function SendMessageToDiscord( string message, string webhook )
 		request.url = "https://" + request.url
 
 	request.body = EncodeJSON( payload )
-	request.headers = {
-		[ "Content-Type" ] = [ "application/json" ],
-		[ "User-Agent" ] = [ "DiscordToTitanfallBridge" ]
-	}
+	request.headers = { ["Content-Type"] = [ "application/json" ], ["User-Agent"] = [ "DiscordToTitanfallBridge" ] }
 
-	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure response )
+	void functionref( HttpRequestFailure ) onFailure = void function( HttpRequestFailure response )
 	{
 		printt( "[DiscordBridge] Request Failed: " + response.errorMessage )
 	}
@@ -250,7 +244,8 @@ void function MapChange()
 	if ( crashmessage.len() )
 		SetConVarInt( "discordbridge_shouldsendmessageifservercrashandorrestart", 0 )
 
-	string message = crashmessage + "Map Has Changed To" + ( GetMapName() in MAP_NAME_TABLE ? ( " " + MAP_NAME_TABLE[ GetMapName() ] ) : "" ) + " [" + GetMapName() + "]"
+	string message = crashmessage + "Map Has Changed To" + ( GetMapName() in MAP_NAME_TABLE ? ( " " + MAP_NAME_TABLE[ GetMapName() ] ) : "" ) + " [" + GetMapName()
+		+ "]"
 
 	SendMessageToDiscord( "```" + message + "```", file.webhook )
 }
@@ -264,7 +259,7 @@ void function MessageQueue()
 	while ( file.realqueue < queue || file.queuetime > Time() )
 		WaitFrame()
 
-	file.queuetime = Time() + 0.50
+	file.queuetime = Time() + 0.5
 	file.realqueue += 1
 }
 
@@ -305,18 +300,16 @@ void function PollDiscordMessages()
 	HttpRequest request
 
 	request.method = HttpRequestMethod.GET
-	request.url = "https://discord.com/api/v9/channels/" + file.channelid + "/messages?limit=5" + ( last_discord_messageid != ";" ? "&after=" + last_discord_messageid : "" )
-	request.headers = {
-		[ "Authorization" ] = [ "Bot " + file.bottoken ],
-		[ "User-Agent" ] = [ "DiscordToTitanfallBridge" ]
-	}
+	request.url =
+		"https://discord.com/api/v9/channels/" + file.channelid + "/messages?limit=5" + ( last_discord_messageid != ";" ? "&after=" + last_discord_messageid : "" )
+	request.headers = { ["Authorization"] = [ "Bot " + file.bottoken ], ["User-Agent"] = [ "DiscordToTitanfallBridge" ] }
 
-	void functionref( HttpRequestResponse ) onSuccess = void function ( HttpRequestResponse response )
+	void functionref( HttpRequestResponse ) onSuccess = void function( HttpRequestResponse response )
 	{
 		thread ThreadDiscordToTitanfallBridge( response )
 	}
 
-	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure response )
+	void functionref( HttpRequestFailure ) onFailure = void function( HttpRequestFailure response )
 	{
 		printt( "[DiscordBridge] Request Failed: " + response.errorMessage )
 	}
@@ -329,18 +322,17 @@ void function RconPollDiscordMessages()
 	HttpRequest request
 
 	request.method = HttpRequestMethod.GET
-	request.url = "https://discord.com/api/v9/channels/" + file.rconchannelid + "/messages?limit=5" + ( rconlast_discord_messageid != ";" ? "&after=" + rconlast_discord_messageid : "" )
-	request.headers = {
-		[ "Authorization" ] = [ "Bot " + file.bottoken ],
-		[ "User-Agent" ] = [ "DiscordToTitanfallBridge" ]
-	}
+	request.url =
+		"https://discord.com/api/v9/channels/" + file.rconchannelid + "/messages?limit=5" +
+			( rconlast_discord_messageid != ";" ? "&after=" + rconlast_discord_messageid : "" )
+	request.headers = { ["Authorization"] = [ "Bot " + file.bottoken ], ["User-Agent"] = [ "DiscordToTitanfallBridge" ] }
 
-	void functionref( HttpRequestResponse ) onSuccess = void function ( HttpRequestResponse response )
+	void functionref( HttpRequestResponse ) onSuccess = void function( HttpRequestResponse response )
 	{
 		thread RconThreadDiscordToTitanfallBridge( response )
 	}
 
-	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure response )
+	void functionref( HttpRequestFailure ) onFailure = void function( HttpRequestFailure response )
 	{
 		printt( "[DiscordBridge] Request Failed: " + response.errorMessage )
 	}
@@ -388,7 +380,7 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 
 		array<string> newresponse = split( responsebody, "" )
 
-		if ( !newresponse.len() || newresponse[0].len() <= 3 )
+		if ( !newresponse.len() || newresponse[ 0 ].len() <= 3 )
 		{
 			if ( last_discord_messageid == ";" )
 				last_discord_messageid = "0"
@@ -431,7 +423,7 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 				continue
 			}
 
-			string message = arrayresponse[0]
+			string message = arrayresponse[ 0 ]
 
 			message = message.slice( 0, 0 - "\",".len() )
 
@@ -455,7 +447,7 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 			while ( message.len() && message.slice( 0, 1 - message.len() ) == " " )
 				message = message.slice( 1 )
 
-			string userid = arrayresponse[3]
+			string userid = arrayresponse[ 3 ]
 
 			while ( userid.find( "\"id\":\"" ) != null )
 				userid = userid.slice( 1 )
@@ -465,7 +457,7 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 			while ( userid.find( "\"" ) != null )
 				userid = userid.slice( 0, 0 - "\"".len() )
 
-			string messageid = arrayresponse[1]
+			string messageid = arrayresponse[ 1 ]
 
 			messageid = messageid.slice( 0, 0 - "\",".len() )
 
@@ -477,7 +469,7 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 			if ( i == newresponse.len() )
 				last_discord_messageid = newestmessageid
 
-			if ( lastmessageid < newestmessageid && lastmessageid != newestmessageid && arrayresponse[3].find( "\"bot\"" ) == null )
+			if ( lastmessageid < newestmessageid && lastmessageid != newestmessageid && arrayresponse[ 3 ].find( "\"bot\"" ) == null )
 			{
 				if ( message.len() > 200 || !message.len() )
 					RedCircleDiscordToTitanfallBridge( messageid, file.channelid )
@@ -535,7 +527,7 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 
 		array<string> newresponse = split( responsebody, "" )
 
-		if ( !newresponse.len() || newresponse[0].len() <= 3 )
+		if ( !newresponse.len() || newresponse[ 0 ].len() <= 3 )
 		{
 			if ( rconlast_discord_messageid == ";" )
 				rconlast_discord_messageid = "0"
@@ -575,7 +567,7 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 				continue
 			}
 
-			string message = arrayresponse[0]
+			string message = arrayresponse[ 0 ]
 
 			message = message.slice( 0, 0 - "\",".len() )
 
@@ -599,7 +591,7 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 			while ( message.len() && message.slice( 0, 1 - message.len() ) == " " )
 				message = message.slice( 1 )
 
-			string userid = arrayresponse[3]
+			string userid = arrayresponse[ 3 ]
 
 			while ( userid.find( "\"id\":\"" ) != null )
 				userid = userid.slice( 1 )
@@ -609,7 +601,7 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 			while ( userid.find( "\"" ) != null )
 				userid = userid.slice( 0, 0 - "\"".len() )
 
-			string messageid = arrayresponse[1]
+			string messageid = arrayresponse[ 1 ]
 
 			messageid = messageid.slice( 0, 0 - "\",".len() )
 
@@ -621,7 +613,7 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 			if ( i == newresponse.len() )
 				rconlast_discord_messageid = newestmessageid
 
-			if ( lastmessageid < newestmessageid && ( arrayresponse[3].find( "\"bot\"" ) == null || file.allowbotsrcon ) )
+			if ( lastmessageid < newestmessageid && ( arrayresponse[ 3 ].find( "\"bot\"" ) == null || file.allowbotsrcon ) )
 			{
 				if ( message.len() >= "?rconscript".len() && message.slice( 0, "?rconscript".len() ).tolower() == "?rconscript" )
 				{
@@ -630,7 +622,7 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 					bool shouldruncommand = false
 
 					for ( int i = 0; i < rconusers.len(); i++ )
-						if ( rconusers[i] == userid )
+						if ( rconusers[ i ] == userid )
 							shouldruncommand = true
 
 					if ( shouldruncommand || !rconusers.len() )
@@ -655,7 +647,7 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 					bool shouldruncommand = false
 
 					for ( int i = 0; i < rconusers.len(); i++ )
-						if ( rconusers[i] == userid )
+						if ( rconusers[ i ] == userid )
 							shouldruncommand = true
 
 					if ( shouldruncommand || !rconusers.len() )
@@ -689,12 +681,9 @@ string function GetUserNicknameRequest( string userid )
 
 	request.method = HttpRequestMethod.GET
 	request.url = "https://discord.com/api/v9/guilds/" + file.serverid + "/members/" + userid
-	request.headers = {
-		[ "Authorization" ] = [ "Bot " + file.bottoken ],
-		[ "User-Agent" ] = [ "DiscordToTitanfallBridge" ]
-	}
+	request.headers = { ["Authorization"] = [ "Bot " + file.bottoken ], ["User-Agent"] = [ "DiscordToTitanfallBridge" ] }
 
-	void functionref( HttpRequestResponse ) onSuccess = void function ( HttpRequestResponse response ) : ( userid, uniquestring )
+	void functionref( HttpRequestResponse ) onSuccess = void function( HttpRequestResponse response ) : ( userid, uniquestring )
 	{
 		if ( response.statusCode == 200 )
 		{
@@ -707,7 +696,7 @@ string function GetUserNicknameRequest( string userid )
 
 			array<string> newresponse = split( responsebody, "" )
 
-			string name = newresponse[1].find( "\"," ) != null ? newresponse[1].slice( "nick\":\"".len(), 0 - "\",".len() ) : ""
+			string name = newresponse[ 1 ].find( "\"," ) != null ? newresponse[ 1 ].slice( "nick\":\"".len(), 0 - "\",".len() ) : ""
 
 			if ( name.len() )
 			{
@@ -728,9 +717,9 @@ string function GetUserNicknameRequest( string userid )
 				name = StringReplace( name, "\\\\", "\\", true )
 			}
 
-			if ( !name.len() && newresponse[3].find( "global_name" ) != null )
+			if ( !name.len() && newresponse[ 3 ].find( "global_name" ) != null )
 			{
-				name = newresponse[3].slice( "global_name\":\"".len(), 0 - "\",".len() )
+				name = newresponse[ 3 ].slice( "global_name\":\"".len(), 0 - "\",".len() )
 
 				while ( name.find( "\\u" ) != null )
 				{
@@ -751,7 +740,7 @@ string function GetUserNicknameRequest( string userid )
 
 			if ( !name.len() )
 			{
-				name = newresponse[2]
+				name = newresponse[ 2 ]
 
 				while ( name.find( "\",\"avatar\"" ) != null )
 					name = name.slice( 0, -1 )
@@ -777,7 +766,7 @@ string function GetUserNicknameRequest( string userid )
 		}
 	}
 
-	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure response ) : ( uniquestring )
+	void functionref( HttpRequestFailure ) onFailure = void function( HttpRequestFailure response ) : ( uniquestring )
 	{
 		printt( "[DiscordBridge] Request Failed: " + response.errorMessage )
 
@@ -805,7 +794,6 @@ string function GetUserNickname( string userid )
 
 	return "Unknown"
 }
-
 
 void function SendMessageToPlayers( string message )
 {
@@ -861,12 +849,9 @@ void function RedCircleDiscordToTitanfallBridge( string messageid, string channe
 
 	request.method = HttpRequestMethod.PUT
 	request.url = "https://discord.com/api/v9/channels/" + channelid + "/messages/" + messageid + "/reactions/%F0%9F%94%B4/@me"
-	request.headers = {
-		[ "Authorization" ] = [ "Bot " + file.bottoken ],
-		[ "User-Agent" ] = [ "DiscordToTitanfallBridge" ]
-	}
+	request.headers = { ["Authorization"] = [ "Bot " + file.bottoken ], ["User-Agent"] = [ "DiscordToTitanfallBridge" ] }
 
-	void functionref( HttpRequestResponse ) onSuccess = void function ( HttpRequestResponse response )
+	void functionref( HttpRequestResponse ) onSuccess = void function( HttpRequestResponse response )
 	{
 		if ( response.statusCode != 204 )
 		{
@@ -875,7 +860,7 @@ void function RedCircleDiscordToTitanfallBridge( string messageid, string channe
 		}
 	}
 
-	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure response )
+	void functionref( HttpRequestFailure ) onFailure = void function( HttpRequestFailure response )
 	{
 		printt( "[DiscordBridge] Request Failed: " + response.errorMessage )
 	}
@@ -889,12 +874,9 @@ void function OrangeCircleDiscordToTitanfallBridge( string messageid, string cha
 
 	request.method = HttpRequestMethod.PUT
 	request.url = "https://discord.com/api/v9/channels/" + channelid + "/messages/" + messageid + "/reactions/%F0%9F%9F%A0/@me"
-	request.headers = {
-		[ "Authorization" ] = [ "Bot " + file.bottoken ],
-		[ "User-Agent" ] = [ "DiscordToTitanfallBridge" ]
-	}
+	request.headers = { ["Authorization"] = [ "Bot " + file.bottoken ], ["User-Agent"] = [ "DiscordToTitanfallBridge" ] }
 
-	void functionref( HttpRequestResponse ) onSuccess = void function ( HttpRequestResponse response )
+	void functionref( HttpRequestResponse ) onSuccess = void function( HttpRequestResponse response )
 	{
 		if ( response.statusCode != 204 )
 		{
@@ -903,7 +885,7 @@ void function OrangeCircleDiscordToTitanfallBridge( string messageid, string cha
 		}
 	}
 
-	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure response )
+	void functionref( HttpRequestFailure ) onFailure = void function( HttpRequestFailure response )
 	{
 		printt( "[DiscordBridge] Request Failed: " + response.errorMessage )
 	}
@@ -917,12 +899,9 @@ void function GreenCircleDiscordToTitanfallBridge( string messageid, string chan
 
 	request.method = HttpRequestMethod.PUT
 	request.url = "https://discord.com/api/v9/channels/" + channelid + "/messages/" + messageid + "/reactions/%F0%9F%9F%A2/@me"
-	request.headers = {
-		[ "Authorization" ] = [ "Bot " + file.bottoken ],
-		[ "User-Agent" ] = [ "DiscordToTitanfallBridge" ]
-	}
+	request.headers = { ["Authorization"] = [ "Bot " + file.bottoken ], ["User-Agent"] = [ "DiscordToTitanfallBridge" ] }
 
-	void functionref( HttpRequestResponse ) onSuccess = void function ( HttpRequestResponse response )
+	void functionref( HttpRequestResponse ) onSuccess = void function( HttpRequestResponse response )
 	{
 		if ( response.statusCode != 204 )
 		{
@@ -931,7 +910,7 @@ void function GreenCircleDiscordToTitanfallBridge( string messageid, string chan
 		}
 	}
 
-	void functionref( HttpRequestFailure ) onFailure = void function ( HttpRequestFailure response )
+	void functionref( HttpRequestFailure ) onFailure = void function( HttpRequestFailure response )
 	{
 		printt( "[DiscordBridge] Request Failed: " + response.errorMessage )
 	}
