@@ -80,11 +80,12 @@ void function DiscordBridgeConsoleLog_Init()
 	file.rconusers = GetConVarString( "discordbridge_rconusers" )
 	file.allowbotsrcon = GetConVarBool( "discordbridge_allowbotsrcon" )
 
-	PrintsShowUnixTimestamp( GetConVarBool( "discordbridge_printsshowsunixtimestamp" ) )
+	PrintsShowUnixTimestamp( GetConVarBool( "discordbridge_printsshowunixtimestamp" ) )
 	PrintsShowInGameTime( GetConVarBool( "discordbridge_printsshowingametime" ) )
-	PrintsShowScriptLocation( GetConVarBool( "discordbridge_printsshowscriptlocation" ) )
+	PrintsShowScript( GetConVarBool( "discordbridge_printsshowscript" ) )
 	AddPrintHookWithExtraInfo( LogPrints )
 	thread LogHandle()
+	seterrorhandler( LogServerScriptError )
 }
 
 ClServer_MessageStruct function LogMessage( ClServer_MessageStruct message )
@@ -206,6 +207,58 @@ void function LogHandle()
 
 			file.logprints = file.logprints.slice( logprints.len() )
 		}
+	}
+}
+
+void function LogServerScriptError( string scripterrormessage )
+{
+	string scripterrormessagewithscripts = scripterrormessage + "\nCALLSTACK"
+
+	int i = 2
+
+	while ( IsValid( getstackinfos( i ) ) )
+	{
+		table stack = expect table( getstackinfos( i ) )
+		scripterrormessagewithscripts +=
+			"\n*FUNCTION [" + ( "func" in stack ? stack[ "func" ] : "unknown" ) + "()] " + ( "src" in stack ? stack[ "src" ] : "unknown" ) + " line [" +
+				( "line" in stack ? stack[ "line" ] : -1 ) + "]"
+
+		i++
+	}
+
+	scripterrormessagewithscripts += "\n\nLOCALS\n"
+
+	i = 2
+
+	while ( IsValid( getstackinfos( i ) ) )
+	{
+		table stack = expect table( getstackinfos( i ) )
+
+		foreach ( key, value in stack[ "locals" ] )
+			scripterrormessagewithscripts += "[" + key + "] " + value + "\n"
+
+		i++
+	}
+
+	scripterrormessagewithscripts += "\nDIAGPRINTS\n\n"
+
+	print( scripterrormessagewithscripts )
+
+	bool serverwillexit = GetConVarInt( "fatal_script_errors_server" ) == 1 ||
+		( GetConVarBool( "fatal_script_errors" ) && GetConVarInt( "fatal_script_errors_server" ) != 0 )
+
+	SendMessageToDiscord(
+		"```SCRIPT ERROR AT UNIX TIME: [" + GetUnixTimestamp() + "] IN GAME TIME: [" + Time() + "] SERVER WILL EXIT = " + serverwillexit + "\n\n" +
+			scripterrormessagewithscripts + "```",
+		file.consolelogwebhook
+	)
+
+	if ( serverwillexit )
+	{
+		if ( NSIsDedicated() )
+			ServerCommand( "exit" )
+		else
+			NSDisconnectPlayer( GetPlayerArray()[ 0 ], "There was a problem processing game logic.\nPlease try again.\n\nView console for details" )
 	}
 }
 

@@ -6,7 +6,7 @@
 	"RequiredOnClient": false,
 	"ConVars": [
 		{
-			"Name": "discordbridge_printsshowsunixtimestamp",
+			"Name": "discordbridge_printsshowunixtimestamp",
 			"DefaultValue": "0"
 		},
 		{
@@ -14,7 +14,7 @@
 			"DefaultValue": "0"
 		},
 		{
-			"Name": "discordbridge_printsshowscriptlocation",
+			"Name": "discordbridge_printsshowscript",
 			"DefaultValue": "0"
 		},
 		{

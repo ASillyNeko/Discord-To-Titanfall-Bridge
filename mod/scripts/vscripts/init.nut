@@ -10,7 +10,7 @@ global function Msg
 global function CodeCallback_Precompile
 global function PrintsShowUnixTimestamp
 global function PrintsShowInGameTime
-global function PrintsShowScriptLocation
+global function PrintsShowScript
 global function AddPrintHook
 global function AddPrintHookWithExtraInfo
 
@@ -386,7 +386,7 @@ struct
 {
 	bool printsshowunixtimestamp = false
 	bool printsshowingametime = false
-	bool printsshowscriptlocation = false
+	bool printsshowscript = false
 	array<void functionref( var, bool )> hooks
 	array<void functionref( var, bool )> hookswithextrainfo
 } file
@@ -409,16 +409,22 @@ void function printmessage( var text, bool usenewline )
 
 	table stack
 
-	if ( IsValid( getstackinfos( 4 ) ) )
-		stack = expect table( getstackinfos( 4 ) )
-	else if ( IsValid( getstackinfos( 3 ) ) )
+	if ( IsValid( getstackinfos( 3 ) ) )
+	{
 		stack = expect table( getstackinfos( 3 ) )
 
-	string printscriptlocation = file.printsshowscriptlocation
-		? ( "[" + expect string( "src" in stack ? stack[ "src" ] : "unknown" ) + ":" + expect int( "line" in stack ? stack[ "line" ] : -1 ) + "] " )
+		if ( expect string( "func" in stack ? stack[ "func" ] : "unknown" ) == "printt" && IsValid( getstackinfos( 4 ) ) )
+			stack = expect table( getstackinfos( 4 ) )
+	}
+
+	string printscript = file.printsshowscript
+		? (
+			"[" + expect string( "src" in stack ? stack[ "src" ] : "unknown" ) + ":" + expect int( "line" in stack ? stack[ "line" ] : -1 ) + " " +
+				expect string( "func" in stack ? stack[ "func" ] : "unknown" ) + "] "
+		)
 		: ""
 
-	string printmessage = unixtimestamp + ingametime + printscriptlocation + text + newline
+	string printmessage = unixtimestamp + ingametime + printscript + text + newline
 
 	foreach ( void functionref( var, bool ) hook in file.hooks )
 		hook( text + newline, usenewline )
@@ -448,9 +454,9 @@ void function PrintsShowInGameTime( bool enable )
 	file.printsshowingametime = enable
 }
 
-void function PrintsShowScriptLocation( bool enable )
+void function PrintsShowScript( bool enable )
 {
-	file.printsshowscriptlocation = enable
+	file.printsshowscript = enable
 }
 
 void function AddPrintHook( void functionref( var, bool ) hook )
@@ -462,4 +468,3 @@ void function AddPrintHookWithExtraInfo( void functionref( var, bool ) hook )
 {
 	file.hookswithextrainfo.append( hook )
 }
-
