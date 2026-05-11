@@ -234,7 +234,7 @@ void function LogServerScriptError( string scripterrormessage )
 	{
 		table stack = expect table( getstackinfos( i ) )
 
-		foreach ( key, value in stack[ "locals" ] )
+		foreach ( var key, var value in stack[ "locals" ] )
 			scripterrormessagewithscripts += "[" + key + "] " + value + "\n"
 
 		i++
