@@ -4,15 +4,15 @@
 
 Prints Show Unix Timestamp
 
-`discordbridge_printsshowsunixtimestamp`
+`discordbridge_printsshowunixtimestamp`
 
 Prints Show In Game Time
 
 `discordbridge_printsshowingametime`
 
-Shows The Script Location Of Prints
+Shows The Script Of Prints
 
-`discordbridge_printshowscriptlocation`
+`discordbridge_printsshowscript`
 
 # Titanfall To Discord
 
@@ -30,7 +30,7 @@ Sends Messages That `discordbridge_webhook` Didn't Send
 
 `discordbridge_blockedmessagewebhook`
 
-Logs **SOME** Server Prints
+Logs **SOME** Server Prints And Server Script Errors
 
 `discordbridge_consolelogwebhook`
 
