@@ -26,7 +26,6 @@ jobs:
           persist-credentials: false
 
       - name: Copy Northstar Mod Into Mods
-        shell: cmd
         run: |
           xcopy NorthstarMod\%NS_MOD_DIR% mods\NorthstarMod /E /I /Y
 
