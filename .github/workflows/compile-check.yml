@@ -2,6 +2,8 @@ name: compile-check
 
 on: [ push, pull_request ]
 
+permissions: {}
+
 jobs:
   compile:
     runs-on: windows-latest
@@ -13,6 +15,7 @@ jobs:
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           path: NorthstarMod
+          persist-credentials: false
 
       - name: Checkout Northstar Mods
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -20,6 +23,7 @@ jobs:
           repository: R2Northstar/NorthstarMods
           ref: main
           path: mods/
+          persist-credentials: false
 
       - name: Copy Northstar Mod Into Mods
         shell: cmd
@@ -31,3 +35,4 @@ jobs:
         with:
           mods-directory: "${{ github.workspace }}/mods"
           native-json: "${{ github.workspace }}/NorthstarMod/.github/natives.json"
+          vanilla: false
