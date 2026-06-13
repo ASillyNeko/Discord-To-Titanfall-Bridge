@@ -56,7 +56,7 @@ jobs:
 
           token: ${{ secrets.TS_KEY }} 
 
-          wrap: mods/Nekos.Discord_To_Titanfall_Bridge
+          wrap: mods/Nekos.Discord.To.Titanfall.Bridge
 
           repo: northstar.thunderstore.io
 
