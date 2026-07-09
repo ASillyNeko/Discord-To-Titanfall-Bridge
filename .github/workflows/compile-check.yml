@@ -35,5 +35,5 @@ jobs:
         uses: ASpoonPlaysGames/squirrel-re-compiler@d1f094852c8d8e6fdf49b26b7b74f119bb5731a0 # v3.0.4
         with:
           mods-directory: "${{ github.workspace }}/mods"
-          native-json: "${{ github.workspace }}/NorthstarMod/.github/natives.json"
+          native-json: "${{ github.workspace }}/mods/.github/natives.json"
           vanilla: false
