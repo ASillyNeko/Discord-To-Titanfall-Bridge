@@ -239,7 +239,7 @@ void function LogServerScriptError( string scriptErrorMessage )
 	print( scriptErrorMessageWithScripts )
 
 	bool serverWillExit = GetConVarInt( "fatal_script_errors_server" ) == 1 ||
-		( GetConVarBool( "fatal_script_errors" ) && !GetConVarBool( "fatal_script_errors_server" ) )
+		( GetConVarBool( "fatal_script_errors" ) && GetConVarInt( "fatal_script_errors_server" ) != 0 )
 
 	SendMessageToDiscord(
 		"```SCRIPT ERROR AT UNIX TIME: [" + GetUnixTimestamp() + "] IN GAME TIME: [" + Time() + "] SERVER WILL EXIT = " + serverWillExit + "\n\n" +
