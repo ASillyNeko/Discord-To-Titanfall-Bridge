@@ -660,7 +660,7 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 
 			if ( lastMessageId < newestMessageId && ( arrayResponse[ 3 ].find( "\"bot\"" ) == null || file.allowBotsRcon ) )
 			{
-				if ( message.len() >= "?rconscript".len() && message.slice( 0, "?rconscript".len() ).tolower() == "?rconscript" )
+				if ( message.len() >= "?rconscript ".len() && message.slice( 0, "?rconscript ".len() ).tolower() == "?rconscript " )
 				{
 					array<string> rconUsers = split( file.rconUsers, "," )
 					bool shouldRunCommand = false
@@ -684,7 +684,7 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 					else
 						OrangeCircleDiscordToTitanfallBridge( messageId, file.rconChannelId )
 				}
-				else if ( message.len() >= "?rcon".len() && message.slice( 0, "?rcon".len() ).tolower() == "?rcon" )
+				else if ( message.len() >= "?rcon ".len() && message.slice( 0, "?rcon ".len() ).tolower() == "?rcon " )
 				{
 					array<string> rconUsers = split( file.rconUsers, "," )
 					bool shouldRunCommand = false
