@@ -2,11 +2,11 @@
 
 # Random Things
 
-Prints Show Unix Timestamp
+Prints show unix timestamp
 
 `discordbridge_printsshowunixtimestamp`
 
-Prints Show In Game Time
+Prints show in game time
 
 `discordbridge_printsshowingametime`
 
@@ -16,63 +16,61 @@ Shows The Script Of Prints
 
 # Titanfall To Discord
 
-If You Set The Convar In The Startup Args Remove (https://) From Webhook Url Otherwise It'll Just Be (https://)
+Make a webhook by hovering over the channel and clicking on (Edit Channel) and going to (Integrations) then click on (Webhooks)
 
-Make A Webhook By Hovering Over The Channel And Clicking On (Edit Channel) And Going To (Integrations) Then Click On (Webhooks)
+Copy the webhook url by clicking on (Copy Webhook URL)
 
-Copy The Webhook Url By Clicking On (Copy Webhook URL)
-
-Required To Send Messages To Discord
+Required to send messages to discord
 
 `discordbridge_webhook`
 
-Sends Messages That `discordbridge_webhook` Didn't Send
+Sends messages that `discordbridge_webhook` didn't send
 
 `discordbridge_blockedmessagewebhook`
 
-Logs **SOME** Server Prints And Server Script Errors
+Logs **SOME** server script prints and server script errors
 
 `discordbridge_consolelogwebhook`
 
-Sends ```Server Has Crashed And Or Restarted``` To `discordbridge_webhook` On Startup
+Sends ```Server Has Crashed And Or Restarted``` to `discordbridge_webhook` on startup
 
-`discordbridge_shouldsendmessageifservercrashandorrestart` Set To 0 To Disable
+`discordbridge_shouldsendmessageifservercrashandorrestart` set to 0 to disable
 
 
 # Discord To Titanfall
 
-Activate Developer Mode At (User Settings/Advanced)
+Activate developer mode at (User Settings/Advanced)
 
-Get `discordbridge_bottoken` By Making A Bot [Here](https://discord.com/developers/applications)
+Get `discordbridge_bottoken` by making a bot [Here](https://discord.com/developers/applications)
 
-Get Channel Ids By Right Clicking On The Channel And Clicking On (Copy Channel ID) Need Developer Mode
+Get channel id by right clicking on the channel and clicking on (Copy Channel ID) needs developer mode
 
-Get Server Id By Right Clicking On The Server's Icon And Clicking On (Copy Channel ID) Need Developer Mode
+Get server id by right clicking on the server's icon and clicking on (Copy Channel ID) needs developer mode
 
-Bot Needs "Send Messages", "Add Reactions", "Read Message History", and "View Channel" Permissions To `discordbridge_channelid` And `discordbridge_rconchannelid` If Set
+Bot needs "Add Reactions", "Read Message History", and "View Channel" permissions to `discordbridge_channelid` and `discordbridge_rconchannelid` if set
 
-Required To Connect To Discord
+Required to connect to discord
 
 `discordbridge_bottoken`
 
-Required To Get Messages
+Required to get messages
 
 `discordbridge_channelid`
 
-Required To Get Discord Names
+Required to get discord names
 
 `discordbridge_serverid`
 
-Rcon Requires `discordbridge_bottoken` 🟠 Means Not Allowed, 🔴 Means Allowed And Failed To Run, And 🟢 Means Allowed And Ran
+Rcon requires `discordbridge_bottoken` 🟠 means not allowed, 🔴 Means allowed and failed to run, and 🟢 means allowed and successfully run
 
-Example Value "402550402140340224" Or "402550402140340224,1415868227170336808" Leaving Empty Will Allow Everyone To Run Rcon Commands
+Example value "402550402140340224" or "402550402140340224,1415868227170336808" leaving it empty will allow everyone with access to `discordbridge_rconchannelid` to run rcon commands
 
 `discordbridge_rconusers`
 
-Adds `?rcon` And `?rconscript` Commands
+Channel with ability to run `?rcon` and `?rconscript`
 
 `discordbridge_rconchannelid`
 
-Allows Discord Bots To Run Rcon Commands
+Allows discord bots to run rcon commands
 
 `discordbridge_allowbotsrcon`
