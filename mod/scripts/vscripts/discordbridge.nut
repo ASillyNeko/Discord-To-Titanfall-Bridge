@@ -242,7 +242,7 @@ void function LogServerScriptError( string scriptErrorMessage )
 		( GetConVarBool( "fatal_script_errors" ) && !GetConVarBool( "fatal_script_errors_server" ) )
 
 	SendMessageToDiscord(
-		"```SCRIPT ERROR AT UNIX TIME: [" + GetUnixTimestamp() + "] IN GAME TIME: [" + Time() + "] SERVER WILL EXIT = " + serverwillexit + "\n\n" +
+		"```SCRIPT ERROR AT UNIX TIME: [" + GetUnixTimestamp() + "] IN GAME TIME: [" + Time() + "] SERVER WILL EXIT = " + serverWillExit + "\n\n" +
 			scriptErrorMessageWithScripts + "```",
 		file.consoleLogWebhook
 	)
@@ -314,24 +314,24 @@ void function DiscordMessagePoller()
 {
 	WaitFrame()
 
-	if ( !file.botToken.len() || !file.serverid.len() )
+	if ( !file.botToken.len() || !file.serverId.len() )
 		return
 
 	while ( true )
 	{
 		if ( GetPlayerArray().len() )
 		{
-			if ( file.channelid.len() )
+			if ( file.channelId.len() )
 				PollDiscordMessages()
 
-			if ( file.rconchannelid.len() )
+			if ( file.rconChannelId.len() )
 				RconPollDiscordMessages()
 		}
 		else
 		{
 			file.lastDiscordMessageId = ";"
 
-			if ( file.rconchannelid.len() )
+			if ( file.rconChannelId.len() )
 				RconPollDiscordMessages()
 		}
 
@@ -856,7 +856,7 @@ void function SendMessageToPlayer( entity player, string message )
 
 	int queue = file.anotherQueue[ player ]
 
-	if ( !( player in file.anotherrealQueue ) )
+	if ( !( player in file.anotherRealQueue ) )
 		file.anotherRealQueue[ player ] <- 0
 
 	if ( file.anotherRealQueue[ player ] < queue )

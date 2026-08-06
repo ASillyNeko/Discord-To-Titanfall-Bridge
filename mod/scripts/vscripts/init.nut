@@ -431,7 +431,7 @@ void function printMessage( var text, bool useNewLine )
 	foreach ( void functionref( var, bool ) hook in file.hooksWithExtraInfo )
 		hook( printMessage, useNewLine )
 
-	return print( printmessage )
+	return print( printMessage )
 }
 
 void function CodeCallback_Precompile()
