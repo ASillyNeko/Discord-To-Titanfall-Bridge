@@ -33,27 +33,29 @@ table<string, string> MAP_NAME_TABLE = {
 struct
 {
 	string webhook = ""
-	string blockedmessagewebhook = ""
-	string consolelogwebhook = ""
-	bool crashmessage = false
+	string blockedMessageWebhook = ""
+	string consoleLogWebhook = ""
+	bool crashMessage = false
 
-	string bottoken = ""
-	string serverid = ""
-	string channelid = ""
-	string rconchannelid = ""
-	string rconusers = ""
-	bool allowbotsrcon = false
+	string botToken = ""
+	string serverId = ""
+	string channelId = ""
+	string rconChannelId = ""
+	string rconUsers = ""
+	string lastDiscordMessageId = ";"
+	string rconLastDiscordMessageId = ";"
+	bool allowBotsRcon = false
 
 	int queue = 0
-	int realqueue = 0
-	float queuetime = 0
+	int realQueue = 0
+	float queueTime = 0
 
-	table<entity, int> anotherqueue
-	table<entity, int> anotherrealqueue
-	table<string, string> namelist
-	table<string, bool> uniquestringrequestdone
+	table<entity, int> anotherQueue
+	table<entity, int> anotherRealQueue
+	table<string, string> nameList
+	table<string, bool> uniqueStringRequestDone
 
-	string logprints = ""
+	string logPrints = ""
 } file
 
 void function DiscordBridge_Init()
@@ -69,16 +71,16 @@ void function DiscordBridge_Init()
 void function DiscordBridgeConsoleLog_Init()
 {
 	file.webhook = GetConVarString( "discordbridge_webhook" )
-	file.blockedmessagewebhook = GetConVarString( "discordbridge_blockedmessagewebhook" )
-	file.consolelogwebhook = GetConVarString( "discordbridge_consolelogwebhook" )
-	file.crashmessage = GetConVarBool( "discordbridge_shouldsendmessageifservercrashandorrestart" )
+	file.blockedMessageWebhook = GetConVarString( "discordbridge_blockedmessagewebhook" )
+	file.consoleLogWebhook = GetConVarString( "discordbridge_consolelogwebhook" )
+	file.crashMessage = GetConVarBool( "discordbridge_shouldsendmessageifservercrashandorrestart" )
 
-	file.bottoken = GetConVarString( "discordbridge_bottoken" )
-	file.serverid = GetConVarString( "discordbridge_serverid" )
-	file.channelid = GetConVarString( "discordbridge_channelid" )
-	file.rconchannelid = GetConVarString( "discordbridge_rconchannelid" )
-	file.rconusers = GetConVarString( "discordbridge_rconusers" )
-	file.allowbotsrcon = GetConVarBool( "discordbridge_allowbotsrcon" )
+	file.botToken = GetConVarString( "discordbridge_bottoken" )
+	file.serverId = GetConVarString( "discordbridge_serverid" )
+	file.channelId = GetConVarString( "discordbridge_channelid" )
+	file.rconChannelId = GetConVarString( "discordbridge_rconchannelid" )
+	file.rconUsers = GetConVarString( "discordbridge_rconusers" )
+	file.allowBotsRcon = GetConVarBool( "discordbridge_allowbotsrcon" )
 
 	PrintsShowUnixTimestamp( GetConVarBool( "discordbridge_printsshowunixtimestamp" ) )
 	PrintsShowInGameTime( GetConVarBool( "discordbridge_printsshowingametime" ) )
@@ -101,25 +103,27 @@ ClServer_MessageStruct function LogMessage( ClServer_MessageStruct message )
 	if ( !msg.len() )
 		return message
 
-	string playername = message.player.GetPlayerName()
-	int playerteam = message.player.GetTeam()
+	string playerName = message.player.GetPlayerName()
+	int playerTeam = message.player.GetTeam()
 	string prefix = ""
-	string teamstr = ""
-	string communitytag = message.player.GetCommunityClanTag().len() ? "[" + message.player.GetCommunityClanTag() + "] " : ""
+	string teamStr = ""
+	string communityTag = message.player.GetCommunityClanTag().len() ? "[" + message.player.GetCommunityClanTag() + "] " : ""
 
-	if ( playerteam == TEAM_IMC )
-		teamstr = "IMC"
-	else if ( playerteam == TEAM_MILITIA )
-		teamstr = "Militia"
+	if ( playerTeam == TEAM_IMC )
+		teamStr = "IMC"
+	else if ( playerTeam == TEAM_MILITIA )
+		teamStr = "Militia"
+	else
+		teamStr = string( playerTeam )
 
 	if ( message.isTeam && GetCurrentPlaylistVarInt( "max_teams", 2 ) == 2 )
-		prefix = "[TEAM (" + teamstr + ")] " + ( message.shouldBlock ? "(HIDDEN) " : "" ) + communitytag + playername
+		prefix = "[TEAM (" + teamStr + ")] " + ( message.shouldBlock ? "(HIDDEN) " : "" ) + communityTag + playerName
 	else
-		prefix = "(" + teamstr + ") " + ( message.shouldBlock ? "(HIDDEN) " : "" ) + communitytag + playername
+		prefix = "(" + teamStr + ") " + ( message.shouldBlock ? "(HIDDEN) " : "" ) + communityTag + playerName
 
 	MessageQueue()
 
-	SendMessageToDiscord( "**" + prefix + ":** " + msg, ( message.shouldBlock ? file.blockedmessagewebhook : file.webhook ) )
+	SendMessageToDiscord( "**" + prefix + ":** " + msg, ( message.shouldBlock ? file.blockedMessageWebhook : file.webhook ) )
 
 	return message
 }
@@ -132,16 +136,7 @@ void function LogJoin( entity player )
 		return
 	}
 
-	string playername = "Someone"
-	string uid = "0"
-
-	if ( IsValid( player ) && player.IsPlayer() )
-	{
-		playername = player.GetPlayerName()
-		uid = player.GetUID()
-	}
-
-	string message = playername + "[" + uid + "] Has (Re)Connected [Currently Connected Players " + GetPlayerArray().len() + "/" +
+	string message = player.GetPlayerName() + "[" + player.GetUID() + "] Has (Re)Connected [Currently Connected Players " + GetPlayerArray().len() + "/" +
 		GetCurrentPlaylistVarInt( "max_players", 16 ) + "]"
 
 	MessageQueue()
@@ -157,17 +152,16 @@ void function LogDisconnect( entity player )
 		return
 	}
 
-	string playername = "Someone"
-	string uid = "0"
+	string playerName = "Unknown"
+	string uid = "-1"
 
-	if ( IsValid( player ) && player.IsPlayer() )
+	if ( IsValidPlayer( player ) )
 	{
-		playername = player.GetPlayerName()
+		playerName = player.GetPlayerName()
 		uid = player.GetUID()
 	}
 
-	int playercount = GetPlayerArray().len() - 1
-	string message = playername + "[" + uid + "] Has Disconnected [Currently Connected Players " + playercount + "/" +
+	string message = playerName + "[" + uid + "] Has Disconnected [Currently Connected Players " + ( GetPlayerArray().len() - 1 ) + "/" +
 		GetCurrentPlaylistVarInt( "max_players", 16 ) + "]"
 
 	MessageQueue()
@@ -175,14 +169,14 @@ void function LogDisconnect( entity player )
 	SendMessageToDiscord( "```" + message + "```", file.webhook )
 }
 
-void function LogPrints( var text, bool hasnewline )
+void function LogPrints( var text, bool hasNewLine )
 {
-	string clonedtext = expect string( text )
+	string clonedText = expect string( text )
 
-	if ( hasnewline )
-		clonedtext = clonedtext.slice( 0, clonedtext.len() - "\n".len() )
+	if ( hasNewLine )
+		clonedText = clonedText.slice( 0, clonedText.len() - "\n".len() )
 
-	file.logprints += file.logprints.len() ? "\n" + clonedtext : clonedtext
+	file.logPrints += file.logPrints.len() ? "\n" + clonedText : clonedText
 }
 
 void function LogHandle()
@@ -191,42 +185,42 @@ void function LogHandle()
 
 	while ( true )
 	{
-		while ( !file.logprints.len() )
+		while ( !file.logPrints.len() )
 			WaitFrame()
 
 		wait 0.75
 
-		string logprints = file.logprints
+		string logPrints = file.logPrints
 
-		if ( logprints.len() )
+		if ( logPrints.len() )
 		{
-			if ( logprints.len() >= 1950 )
-				logprints = logprints.slice( 0, 1950 )
+			if ( logPrints.len() >= 1950 )
+				logPrints = logPrints.slice( 0, 1950 )
 
-			SendMessageToDiscord( "```" + logprints + "```", file.consolelogwebhook )
+			SendMessageToDiscord( "```" + logPrints + "```", file.consoleLogWebhook )
 
-			file.logprints = file.logprints.slice( logprints.len() )
+			file.logPrints = file.logPrints.slice( logPrints.len() )
 		}
 	}
 }
 
-void function LogServerScriptError( string scripterrormessage )
+void function LogServerScriptError( string scriptErrorMessage )
 {
-	string scripterrormessagewithscripts = scripterrormessage + "\nCALLSTACK"
+	string scriptErrorMessageWithScripts = scriptErrorMessage + "\nCALLSTACK"
 
 	int i = 2
 
 	while ( IsValid( getstackinfos( i ) ) )
 	{
 		table stack = expect table( getstackinfos( i ) )
-		scripterrormessagewithscripts +=
+		scriptErrorMessageWithScripts +=
 			"\n*FUNCTION [" + ( "func" in stack ? stack[ "func" ] : "unknown" ) + "()] " + ( "src" in stack ? stack[ "src" ] : "unknown" ) + " line [" +
 				( "line" in stack ? stack[ "line" ] : -1 ) + "]"
 
 		i++
 	}
 
-	scripterrormessagewithscripts += "\n\nLOCALS\n"
+	scriptErrorMessageWithScripts += "\n\nLOCALS\n"
 
 	i = 2
 
@@ -235,25 +229,25 @@ void function LogServerScriptError( string scripterrormessage )
 		table stack = expect table( getstackinfos( i ) )
 
 		foreach ( var key, var value in stack[ "locals" ] )
-			scripterrormessagewithscripts += "[" + key + "] " + value + "\n"
+			scriptErrorMessageWithScripts += "[" + key + "] " + value + "\n"
 
 		i++
 	}
 
-	scripterrormessagewithscripts += "\nDIAGPRINTS\n\n"
+	scriptErrorMessageWithScripts += "\nDIAGPRINTS\n\n"
 
-	print( scripterrormessagewithscripts )
+	print( scriptErrorMessageWithScripts )
 
-	bool serverwillexit = GetConVarInt( "fatal_script_errors_server" ) == 1 ||
-		( GetConVarBool( "fatal_script_errors" ) && GetConVarInt( "fatal_script_errors_server" ) != 0 )
+	bool serverWillExit = GetConVarInt( "fatal_script_errors_server" ) == 1 ||
+		( GetConVarBool( "fatal_script_errors" ) && !GetConVarBool( "fatal_script_errors_server" ) )
 
 	SendMessageToDiscord(
 		"```SCRIPT ERROR AT UNIX TIME: [" + GetUnixTimestamp() + "] IN GAME TIME: [" + Time() + "] SERVER WILL EXIT = " + serverwillexit + "\n\n" +
-			scripterrormessagewithscripts + "```",
-		file.consolelogwebhook
+			scriptErrorMessageWithScripts + "```",
+		file.consoleLogWebhook
 	)
 
-	if ( serverwillexit )
+	if ( serverWillExit )
 	{
 		if ( NSIsDedicated() )
 			ServerCommand( "exit" )
@@ -292,12 +286,12 @@ void function MapChange()
 {
 	MessageQueue()
 
-	string crashmessage = file.crashmessage ? "Server Has Crashed/Restarted\n\n" : ""
+	string crashMessage = file.crashMessage ? "Server Has Crashed/Restarted\n\n" : ""
 
-	if ( crashmessage.len() )
+	if ( crashMessage.len() )
 		SetConVarInt( "discordbridge_shouldsendmessageifservercrashandorrestart", 0 )
 
-	string message = crashmessage + "Map Has Changed To" + ( GetMapName() in MAP_NAME_TABLE ? ( " " + MAP_NAME_TABLE[ GetMapName() ] ) : "" ) + " [" + GetMapName()
+	string message = crashMessage + "Map Has Changed To" + ( GetMapName() in MAP_NAME_TABLE ? ( " " + MAP_NAME_TABLE[ GetMapName() ] ) : "" ) + " [" + GetMapName()
 		+ "]"
 
 	SendMessageToDiscord( "```" + message + "```", file.webhook )
@@ -309,21 +303,18 @@ void function MessageQueue()
 
 	file.queue += 1
 
-	while ( file.realqueue < queue || file.queuetime > Time() )
+	while ( file.realQueue < queue || file.queueTime > Time() )
 		WaitFrame()
 
-	file.queuetime = Time() + 0.5
-	file.realqueue += 1
+	file.queueTime = Time() + 0.5
+	file.realQueue += 1
 }
-
-string last_discord_messageid = ";"
-string rconlast_discord_messageid = ";"
 
 void function DiscordMessagePoller()
 {
 	WaitFrame()
 
-	if ( !file.bottoken.len() || !file.serverid.len() )
+	if ( !file.botToken.len() || !file.serverid.len() )
 		return
 
 	while ( true )
@@ -338,7 +329,7 @@ void function DiscordMessagePoller()
 		}
 		else
 		{
-			last_discord_messageid = ";"
+			file.lastDiscordMessageId = ";"
 
 			if ( file.rconchannelid.len() )
 				RconPollDiscordMessages()
@@ -354,8 +345,9 @@ void function PollDiscordMessages()
 
 	request.method = HttpRequestMethod.GET
 	request.url =
-		"https://discord.com/api/v9/channels/" + file.channelid + "/messages?limit=5" + ( last_discord_messageid != ";" ? "&after=" + last_discord_messageid : "" )
-	request.headers = { ["Authorization"] = [ "Bot " + file.bottoken ], ["User-Agent"] = [ "DiscordToTitanfallBridge" ] }
+		"https://discord.com/api/v9/channels/" + file.channelId + "/messages?limit=5" +
+			( file.lastDiscordMessageId != ";" ? "&after=" + file.lastDiscordMessageId : "" )
+	request.headers = { ["Authorization"] = [ "Bot " + file.botToken ], ["User-Agent"] = [ "DiscordToTitanfallBridge" ] }
 
 	void functionref( HttpRequestResponse ) onSuccess = void function( HttpRequestResponse response )
 	{
@@ -376,9 +368,9 @@ void function RconPollDiscordMessages()
 
 	request.method = HttpRequestMethod.GET
 	request.url =
-		"https://discord.com/api/v9/channels/" + file.rconchannelid + "/messages?limit=5" +
-			( rconlast_discord_messageid != ";" ? "&after=" + rconlast_discord_messageid : "" )
-	request.headers = { ["Authorization"] = [ "Bot " + file.bottoken ], ["User-Agent"] = [ "DiscordToTitanfallBridge" ] }
+		"https://discord.com/api/v9/channels/" + file.rconChannelId + "/messages?limit=5" +
+			( file.rconLastDiscordMessageId != ";" ? "&after=" + file.rconLastDiscordMessageId : "" )
+	request.headers = { ["Authorization"] = [ "Bot " + file.botToken ], ["User-Agent"] = [ "DiscordToTitanfallBridge" ] }
 
 	void functionref( HttpRequestResponse ) onSuccess = void function( HttpRequestResponse response )
 	{
@@ -397,86 +389,86 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 {
 	if ( response.statusCode == 200 )
 	{
-		string responsebody = response.body
+		string responseBody = response.body
 
-		responsebody = StringReplace( responsebody, "\"message_reference\"", "\"message_reference\"", true )
-		responsebody = StringReplace( responsebody, "},{\"type\"", "},{\"type\"", true )
+		responseBody = StringReplace( responseBody, "\"message_reference\"", "\"message_reference\"", true )
+		responseBody = StringReplace( responseBody, "},{\"type\"", "},{\"type\"", true )
 
-		array<string> arrayresponse = split( responsebody, "" )
-		array<string> fixedresponse = []
+		array<string> arrayResponse = split( responseBody, "" )
+		array<string> fixedResponse = []
 
-		foreach ( string fixresponse in arrayresponse )
-			if ( fixresponse.find( "\"message_reference\"" ) == null )
-				fixedresponse.append( fixresponse )
+		foreach ( string fixResponse in arrayResponse )
+			if ( fixResponse.find( "\"message_reference\"" ) == null )
+				fixedResponse.append( fixResponse )
 
-		responsebody = ""
+		responseBody = ""
 
-		foreach ( string fixresponse in fixedresponse )
-			responsebody += fixresponse
+		foreach ( string fixResponse in fixedResponse )
+			responseBody += fixResponse
 
-		responsebody = StringReplace( responsebody, "\"mention_roles\"", "\"mention_roles\"", true )
-		responsebody = StringReplace( responsebody, "\"timestamp\":\"", "\"timestamp\":\"", true )
+		responseBody = StringReplace( responseBody, "\"mention_roles\"", "\"mention_roles\"", true )
+		responseBody = StringReplace( responseBody, "\"timestamp\":\"", "\"timestamp\":\"", true )
 
-		arrayresponse = split( responsebody, "" )
-		fixedresponse = []
+		arrayResponse = split( responseBody, "" )
+		fixedResponse = []
 
-		foreach ( string fixresponse in arrayresponse )
-			if ( fixresponse.find( "\"attachments\"" ) == null && fixresponse.find( "\"embeds\"" ) == null )
-				fixedresponse.append( fixresponse )
+		foreach ( string fixResponse in arrayResponse )
+			if ( fixResponse.find( "\"attachments\"" ) == null && fixResponse.find( "\"embeds\"" ) == null )
+				fixedResponse.append( fixResponse )
 
-		responsebody = ""
+		responseBody = ""
 
-		foreach ( string fixresponse in fixedresponse )
-			responsebody += fixresponse
+		foreach ( string fixResponse in fixedResponse )
+			responseBody += fixResponse
 
-		responsebody = StringReplace( responsebody, "},{\"type\"", "[{", true )
+		responseBody = StringReplace( responseBody, "},{\"type\"", "[{", true )
 
-		array<string> newresponse = split( responsebody, "" )
+		array<string> newResponse = split( responseBody, "" )
 
-		if ( !newresponse.len() || newresponse[ 0 ].len() <= 3 )
+		if ( !newResponse.len() || newResponse[ 0 ].len() <= 3 )
 		{
-			if ( last_discord_messageid == ";" )
-				last_discord_messageid = "0"
+			if ( file.lastDiscordMessageId == ";" )
+				file.lastDiscordMessageId = "0"
 
 			return
 		}
 
-		string lastmessageid = last_discord_messageid
-		string newestmessageid = ""
+		string lastMessageId = file.lastDiscordMessageId
+		string newestMessageId = ""
 
-		newresponse.reverse()
+		newResponse.reverse()
 
 		int i = 0
 
-		foreach ( string newresponsestr in newresponse )
+		foreach ( string newResponseStr in newResponse )
 		{
 			if ( !GetPlayerArray().len() )
 				return
 
 			i += 1
 
-			responsebody = newresponsestr
-			responsebody = StringReplace( responsebody, "\"author\"", "author\"", true )
-			responsebody = StringReplace( responsebody, "\"pinned\"", "pinned\"", true )
-			responsebody = StringReplace( responsebody, "\"mentions\"", "mentions\"", true )
-			responsebody = StringReplace( responsebody, "\"channel_id\"", "channel_id\"", true )
+			responseBody = newResponseStr
+			responseBody = StringReplace( responseBody, "\"author\"", "author\"", true )
+			responseBody = StringReplace( responseBody, "\"pinned\"", "pinned\"", true )
+			responseBody = StringReplace( responseBody, "\"mentions\"", "mentions\"", true )
+			responseBody = StringReplace( responseBody, "\"channel_id\"", "channel_id\"", true )
 
-			arrayresponse = split( responsebody, "" )
+			arrayResponse = split( responseBody, "" )
 
-			if ( arrayresponse.len() != 5 )
+			if ( arrayResponse.len() != 5 )
 			{
-				if ( i == newresponse.len() )
+				if ( i == newResponse.len() )
 				{
-					if ( !newestmessageid.len() )
-						last_discord_messageid = "0"
+					if ( !newestMessageId.len() )
+						file.lastDiscordMessageId = "0"
 					else
-						last_discord_messageid = newestmessageid
+						file.lastDiscordMessageId = newestMessageId
 				}
 
 				continue
 			}
 
-			string message = arrayresponse[ 0 ]
+			string message = arrayResponse[ 0 ]
 
 			message = message.slice( 0, 0 - "\",".len() )
 
@@ -500,34 +492,34 @@ void function ThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 			while ( message.len() && message.slice( 0, 1 - message.len() ) == " " )
 				message = message.slice( 1 )
 
-			string userid = arrayresponse[ 3 ]
+			string userId = arrayResponse[ 3 ]
 
-			while ( userid.find( "\"id\":\"" ) != null )
-				userid = userid.slice( 1 )
+			while ( userId.find( "\"id\":\"" ) != null )
+				userId = userId.slice( 1 )
 
-			userid = userid.slice( "id\":\"".len() )
+			userId = userId.slice( "id\":\"".len() )
 
-			while ( userid.find( "\"" ) != null )
-				userid = userid.slice( 0, 0 - "\"".len() )
+			while ( userId.find( "\"" ) != null )
+				userId = userId.slice( 0, 0 - "\"".len() )
 
-			string messageid = arrayresponse[ 1 ]
+			string messageId = arrayResponse[ 1 ]
 
-			messageid = messageid.slice( 0, 0 - "\",".len() )
+			messageId = messageId.slice( 0, 0 - "\",".len() )
 
-			while ( messageid.find( "\"" ) != null )
-				messageid = messageid.slice( 1 )
+			while ( messageId.find( "\"" ) != null )
+				messageId = messageId.slice( 1 )
 
-			newestmessageid = messageid
+			newestMessageId = messageId
 
-			if ( i == newresponse.len() )
-				last_discord_messageid = newestmessageid
+			if ( i == newResponse.len() )
+				file.lastDiscordMessageId = newestMessageId
 
-			if ( lastmessageid < newestmessageid && lastmessageid != newestmessageid && arrayresponse[ 3 ].find( "\"bot\"" ) == null )
+			if ( lastMessageId < newestMessageId && lastMessageId != newestMessageId && arrayResponse[ 3 ].find( "\"bot\"" ) == null )
 			{
 				if ( message.len() > 200 || !message.len() )
-					RedCircleDiscordToTitanfallBridge( messageid, file.channelid )
+					RedCircleDiscordToTitanfallBridge( messageId, file.channelId )
 				else
-					thread EndThreadDiscordToTitanfallBridge( message, userid, messageid )
+					thread EndThreadDiscordToTitanfallBridge( message, userId, messageId )
 
 				wait 0.25
 			}
@@ -544,83 +536,83 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 {
 	if ( response.statusCode == 200 )
 	{
-		string responsebody = response.body
+		string responseBody = response.body
 
-		responsebody = StringReplace( responsebody, "\"message_reference\"", "\"message_reference\"", true )
-		responsebody = StringReplace( responsebody, "},{\"type\"", "},{\"type\"", true )
+		responseBody = StringReplace( responseBody, "\"message_reference\"", "\"message_reference\"", true )
+		responseBody = StringReplace( responseBody, "},{\"type\"", "},{\"type\"", true )
 
-		array<string> arrayresponse = split( responsebody, "" )
-		array<string> fixedresponse = []
+		array<string> arrayResponse = split( responseBody, "" )
+		array<string> fixedResponse = []
 
-		foreach ( string fixresponse in arrayresponse )
-			if ( fixresponse.find( "\"message_reference\"" ) == null )
-				fixedresponse.append( fixresponse )
+		foreach ( string fixResponse in arrayResponse )
+			if ( fixResponse.find( "\"message_reference\"" ) == null )
+				fixedResponse.append( fixResponse )
 
-		responsebody = ""
+		responseBody = ""
 
-		foreach ( string fixresponse in fixedresponse )
-			responsebody += fixresponse
+		foreach ( string fixResponse in fixedResponse )
+			responseBody += fixResponse
 
-		responsebody = StringReplace( responsebody, "\"mention_roles\"", "\"mention_roles\"", true )
-		responsebody = StringReplace( responsebody, "\"timestamp\":\"", "\"timestamp\":\"", true )
+		responseBody = StringReplace( responseBody, "\"mention_roles\"", "\"mention_roles\"", true )
+		responseBody = StringReplace( responseBody, "\"timestamp\":\"", "\"timestamp\":\"", true )
 
-		arrayresponse = split( responsebody, "" )
-		fixedresponse = []
+		arrayResponse = split( responseBody, "" )
+		fixedResponse = []
 
-		foreach ( string fixresponse in arrayresponse )
-			if ( fixresponse.find( "\"attachments\"" ) == null && fixresponse.find( "\"embeds\"" ) == null )
-				fixedresponse.append( fixresponse )
+		foreach ( string fixResponse in arrayResponse )
+			if ( fixResponse.find( "\"attachments\"" ) == null && fixResponse.find( "\"embeds\"" ) == null )
+				fixedResponse.append( fixResponse )
 
-		responsebody = ""
+		responseBody = ""
 
-		foreach ( string fixresponse in fixedresponse )
-			responsebody += fixresponse
+		foreach ( string fixResponse in fixedResponse )
+			responseBody += fixResponse
 
-		responsebody = StringReplace( responsebody, "},{\"type\"", "[{", true )
+		responseBody = StringReplace( responseBody, "},{\"type\"", "[{", true )
 
-		array<string> newresponse = split( responsebody, "" )
+		array<string> newResponse = split( responseBody, "" )
 
-		if ( !newresponse.len() || newresponse[ 0 ].len() <= 3 )
+		if ( !newResponse.len() || newResponse[ 0 ].len() <= 3 )
 		{
-			if ( rconlast_discord_messageid == ";" )
-				rconlast_discord_messageid = "0"
+			if ( file.rconLastDiscordMessageId == ";" )
+				file.rconLastDiscordMessageId = "0"
 
 			return
 		}
 
-		string lastmessageid = rconlast_discord_messageid
-		string newestmessageid = ""
+		string lastMessageId = file.rconLastDiscordMessageId
+		string newestMessageId = ""
 
-		newresponse.reverse()
+		newResponse.reverse()
 
 		int i = 0
 
-		foreach ( string newresponsestr in newresponse )
+		foreach ( string newResponseStr in newResponse )
 		{
 			i += 1
 
-			responsebody = newresponsestr
-			responsebody = StringReplace( responsebody, "\"author\"", "author\"", true )
-			responsebody = StringReplace( responsebody, "\"pinned\"", "pinned\"", true )
-			responsebody = StringReplace( responsebody, "\"mentions\"", "mentions\"", true )
-			responsebody = StringReplace( responsebody, "\"channel_id\"", "channel_id\"", true )
+			responseBody = newResponseStr
+			responseBody = StringReplace( responseBody, "\"author\"", "author\"", true )
+			responseBody = StringReplace( responseBody, "\"pinned\"", "pinned\"", true )
+			responseBody = StringReplace( responseBody, "\"mentions\"", "mentions\"", true )
+			responseBody = StringReplace( responseBody, "\"channel_id\"", "channel_id\"", true )
 
-			arrayresponse = split( responsebody, "" )
+			arrayResponse = split( responseBody, "" )
 
-			if ( arrayresponse.len() != 5 )
+			if ( arrayResponse.len() != 5 )
 			{
-				if ( i == newresponse.len() )
+				if ( i == newResponse.len() )
 				{
-					if ( !newestmessageid.len() )
-						rconlast_discord_messageid = "0"
+					if ( !newestMessageId.len() )
+						file.rconLastDiscordMessageId = "0"
 					else
-						rconlast_discord_messageid = newestmessageid
+						file.rconLastDiscordMessageId = newestMessageId
 				}
 
 				continue
 			}
 
-			string message = arrayresponse[ 0 ]
+			string message = arrayResponse[ 0 ]
 
 			message = message.slice( 0, 0 - "\",".len() )
 
@@ -644,73 +636,71 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 			while ( message.len() && message.slice( 0, 1 - message.len() ) == " " )
 				message = message.slice( 1 )
 
-			string userid = arrayresponse[ 3 ]
+			string userId = arrayResponse[ 3 ]
 
-			while ( userid.find( "\"id\":\"" ) != null )
-				userid = userid.slice( 1 )
+			while ( userId.find( "\"id\":\"" ) != null )
+				userId = userId.slice( 1 )
 
-			userid = userid.slice( "id\":\"".len() )
+			userId = userId.slice( "id\":\"".len() )
 
-			while ( userid.find( "\"" ) != null )
-				userid = userid.slice( 0, 0 - "\"".len() )
+			while ( userId.find( "\"" ) != null )
+				userId = userId.slice( 0, 0 - "\"".len() )
 
-			string messageid = arrayresponse[ 1 ]
+			string messageId = arrayResponse[ 1 ]
 
-			messageid = messageid.slice( 0, 0 - "\",".len() )
+			messageId = messageId.slice( 0, 0 - "\",".len() )
 
-			while ( messageid.find( "\"" ) != null )
-				messageid = messageid.slice( 1 )
+			while ( messageId.find( "\"" ) != null )
+				messageId = messageId.slice( 1 )
 
-			newestmessageid = messageid
+			newestMessageId = messageId
 
-			if ( i == newresponse.len() )
-				rconlast_discord_messageid = newestmessageid
+			if ( i == newResponse.len() )
+				file.rconLastDiscordMessageId = newestMessageId
 
-			if ( lastmessageid < newestmessageid && ( arrayresponse[ 3 ].find( "\"bot\"" ) == null || file.allowbotsrcon ) )
+			if ( lastMessageId < newestMessageId && ( arrayResponse[ 3 ].find( "\"bot\"" ) == null || file.allowBotsRcon ) )
 			{
 				if ( message.len() >= "?rconscript".len() && message.slice( 0, "?rconscript".len() ).tolower() == "?rconscript" )
 				{
-					array<string> rconusers = split( file.rconusers, "," )
+					array<string> rconUsers = split( file.rconUsers, "," )
+					bool shouldRunCommand = false
 
-					bool shouldruncommand = false
+					for ( int i = 0; i < rconUsers.len(); i++ )
+						if ( rconUsers[ i ] == userId )
+							shouldRunCommand = true
 
-					for ( int i = 0; i < rconusers.len(); i++ )
-						if ( rconusers[ i ] == userid )
-							shouldruncommand = true
-
-					if ( shouldruncommand || !rconusers.len() )
+					if ( shouldRunCommand || !rconUsers.len() )
 					{
-						printt( "[DiscordBridge] Running Rcon Script Sent By: " + userid + ": " + message )
+						printt( "[DiscordBridge] Running Rcon Script Sent By: " + userId + ": " + message )
 
 						try
 						{
-							thread compilestring( message.slice( "?rconscript".len() ) )()
-							GreenCircleDiscordToTitanfallBridge( messageid, file.rconchannelid )
+							thread compilestring( message.slice( "?rconscript ".len() ) )()
+							GreenCircleDiscordToTitanfallBridge( messageId, file.rconChannelId )
 						}
 						catch ( error )
-							RedCircleDiscordToTitanfallBridge( messageid, file.rconchannelid )
+							RedCircleDiscordToTitanfallBridge( messageId, file.rconChannelId )
 					}
 					else
-						OrangeCircleDiscordToTitanfallBridge( messageid, file.rconchannelid )
+						OrangeCircleDiscordToTitanfallBridge( messageId, file.rconChannelId )
 				}
 				else if ( message.len() >= "?rcon".len() && message.slice( 0, "?rcon".len() ).tolower() == "?rcon" )
 				{
-					array<string> rconusers = split( file.rconusers, "," )
+					array<string> rconUsers = split( file.rconUsers, "," )
+					bool shouldRunCommand = false
 
-					bool shouldruncommand = false
+					for ( int i = 0; i < rconUsers.len(); i++ )
+						if ( rconUsers[ i ] == userId )
+							shouldRunCommand = true
 
-					for ( int i = 0; i < rconusers.len(); i++ )
-						if ( rconusers[ i ] == userid )
-							shouldruncommand = true
-
-					if ( shouldruncommand || !rconusers.len() )
+					if ( shouldRunCommand || !rconUsers.len() )
 					{
-						GreenCircleDiscordToTitanfallBridge( messageid, file.rconchannelid )
-						printt( "[DiscordBridge] Running Rcon Command Sent By: " + userid + ": " + message )
-						ServerCommand( message.slice( "?rcon".len() ) )
+						GreenCircleDiscordToTitanfallBridge( messageId, file.rconChannelId )
+						printt( "[DiscordBridge] Running Rcon Command Sent By: " + userId + ": " + message )
+						ServerCommand( message.slice( "?rcon ".len() ) )
 					}
 					else
-						OrangeCircleDiscordToTitanfallBridge( messageid, file.rconchannelid )
+						OrangeCircleDiscordToTitanfallBridge( messageId, file.rconChannelId )
 				}
 
 				wait 0.25
@@ -724,32 +714,32 @@ void function RconThreadDiscordToTitanfallBridge( HttpRequestResponse response )
 	}
 }
 
-string function GetUserNicknameRequest( string userid )
+string function GetUserNicknameRequest( string userId )
 {
 	string uniquestring = UniqueString()
 
-	file.uniquestringrequestdone[ uniquestring ] <- false
+	file.uniqueStringRequestDone[ uniquestring ] <- false
 
 	HttpRequest request
 
 	request.method = HttpRequestMethod.GET
-	request.url = "https://discord.com/api/v9/guilds/" + file.serverid + "/members/" + userid
-	request.headers = { ["Authorization"] = [ "Bot " + file.bottoken ], ["User-Agent"] = [ "DiscordToTitanfallBridge" ] }
+	request.url = "https://discord.com/api/v9/guilds/" + file.serverId + "/members/" + userId
+	request.headers = { ["Authorization"] = [ "Bot " + file.botToken ], ["User-Agent"] = [ "DiscordToTitanfallBridge" ] }
 
-	void functionref( HttpRequestResponse ) onSuccess = void function( HttpRequestResponse response ) : ( userid, uniquestring )
+	void functionref( HttpRequestResponse ) onSuccess = void function( HttpRequestResponse response ) : ( userId, uniquestring )
 	{
 		if ( response.statusCode == 200 )
 		{
-			string responsebody = response.body
+			string responseBody = response.body
 
-			responsebody = StringReplace( responsebody, "\"nick\"", "nick\"", true )
-			responsebody = StringReplace( responsebody, "\"pending\"", "pending\"", true )
-			responsebody = StringReplace( responsebody, "\"global_name\"", "global_name\"", true )
-			responsebody = StringReplace( responsebody, "\"avatar_decoration_data\"", "avatar_decoration_data\"", true )
+			responseBody = StringReplace( responseBody, "\"nick\"", "nick\"", true )
+			responseBody = StringReplace( responseBody, "\"pending\"", "pending\"", true )
+			responseBody = StringReplace( responseBody, "\"global_name\"", "global_name\"", true )
+			responseBody = StringReplace( responseBody, "\"avatar_decoration_data\"", "avatar_decoration_data\"", true )
 
-			array<string> newresponse = split( responsebody, "" )
+			array<string> newResponse = split( responseBody, "" )
 
-			string name = newresponse[ 1 ].find( "\"," ) != null ? newresponse[ 1 ].slice( "nick\":\"".len(), 0 - "\",".len() ) : ""
+			string name = newResponse[ 1 ].find( "\"," ) != null ? newResponse[ 1 ].slice( "nick\":\"".len(), 0 - "\",".len() ) : ""
 
 			if ( name.len() )
 			{
@@ -770,9 +760,9 @@ string function GetUserNicknameRequest( string userid )
 				name = StringReplace( name, "\\\\", "\\", true )
 			}
 
-			if ( !name.len() && newresponse[ 3 ].find( "global_name" ) != null )
+			if ( !name.len() && newResponse[ 3 ].find( "global_name" ) != null )
 			{
-				name = newresponse[ 3 ].slice( "global_name\":\"".len(), 0 - "\",".len() )
+				name = newResponse[ 3 ].slice( "global_name\":\"".len(), 0 - "\",".len() )
 
 				while ( name.find( "\\u" ) != null )
 				{
@@ -793,7 +783,7 @@ string function GetUserNicknameRequest( string userid )
 
 			if ( !name.len() )
 			{
-				name = newresponse[ 2 ]
+				name = newResponse[ 2 ]
 
 				while ( name.find( "\",\"avatar\"" ) != null )
 					name = name.slice( 0, -1 )
@@ -804,18 +794,18 @@ string function GetUserNicknameRequest( string userid )
 					name = name.slice( "\"".len() )
 			}
 
-			file.namelist[ userid ] <- name
+			file.nameList[ userId ] <- name
 
-			if ( uniquestring in file.uniquestringrequestdone )
-				file.uniquestringrequestdone[ uniquestring ] <- true
+			if ( uniquestring in file.uniqueStringRequestDone )
+				file.uniqueStringRequestDone[ uniquestring ] <- true
 		}
 		else
 		{
 			printt( "[DiscordBridge] Request Failed With Status: " + response.statusCode.tostring() )
 			printt( "[DiscordBridge] Response Body: " + response.body )
 
-			if ( uniquestring in file.uniquestringrequestdone )
-				file.uniquestringrequestdone[ uniquestring ] <- true
+			if ( uniquestring in file.uniqueStringRequestDone )
+				file.uniqueStringRequestDone[ uniquestring ] <- true
 		}
 	}
 
@@ -823,8 +813,8 @@ string function GetUserNicknameRequest( string userid )
 	{
 		printt( "[DiscordBridge] Request Failed: " + response.errorMessage )
 
-		if ( uniquestring in file.uniquestringrequestdone )
-			file.uniquestringrequestdone[ uniquestring ] <- true
+		if ( uniquestring in file.uniqueStringRequestDone )
+			file.uniqueStringRequestDone[ uniquestring ] <- true
 	}
 
 	NSHttpRequest( request, onSuccess, onFailure )
@@ -832,18 +822,18 @@ string function GetUserNicknameRequest( string userid )
 	return uniquestring
 }
 
-string function GetUserNickname( string userid )
+string function GetUserNickname( string userId )
 {
-	string uniquestring = GetUserNicknameRequest( userid )
+	string uniquestring = GetUserNicknameRequest( userId )
 	float timeOut = Time() + 0.75
 
-	while ( !file.uniquestringrequestdone[ uniquestring ] && Time() < timeOut )
+	while ( !file.uniqueStringRequestDone[ uniquestring ] && Time() < timeOut )
 		WaitFrame()
 
-	delete file.uniquestringrequestdone[ uniquestring ]
+	delete file.uniqueStringRequestDone[ uniquestring ]
 
-	if ( userid in file.namelist )
-		return file.namelist[ userid ]
+	if ( userId in file.nameList )
+		return file.nameList[ userId ]
 
 	return "Unknown"
 }
@@ -861,15 +851,15 @@ void function SendMessageToPlayer( entity player, string message )
 
 	player.EndSignal( "OnDestroy" )
 
-	if ( !( player in file.anotherqueue ) )
-		file.anotherqueue[ player ] <- 0
+	if ( !( player in file.anotherQueue ) )
+		file.anotherQueue[ player ] <- 0
 
-	int queue = file.anotherqueue[ player ]
+	int queue = file.anotherQueue[ player ]
 
-	if ( !( player in file.anotherrealqueue ) )
-		file.anotherrealqueue[ player ] <- 0
+	if ( !( player in file.anotherrealQueue ) )
+		file.anotherRealQueue[ player ] <- 0
 
-	if ( file.anotherrealqueue[ player ] < queue )
+	if ( file.anotherRealQueue[ player ] < queue )
 		WaitFrame()
 
 	while ( player.IsWatchingKillReplay() )
@@ -877,32 +867,32 @@ void function SendMessageToPlayer( entity player, string message )
 
 	WaitFrame()
 
-	file.anotherrealqueue[ player ] += 1
+	file.anotherRealQueue[ player ] += 1
 
 	Chat_ServerPrivateMessage( player, message, false, false )
 }
 
-void function EndThreadDiscordToTitanfallBridge( string message, string userid, string messageid )
+void function EndThreadDiscordToTitanfallBridge( string message, string userId, string messageId )
 {
-	userid = GetUserNickname( userid )
+	string name = GetUserNickname( userId )
 
 	if ( !GetPlayerArray().len() )
 		return
 
-	string nonewlinemessage = StringReplace( message, "\\n", " ", true )
+	string noNewLineMessage = StringReplace( message, "\\n", " ", true )
 
-	printt( "[DiscordBridge] Messaging Players: [Discord] " + userid + ": " + nonewlinemessage )
-	SendMessageToPlayers( "[38;2;88;101;242m" + "[Discord] " + userid + ": \x1b[0m" + nonewlinemessage )
-	GreenCircleDiscordToTitanfallBridge( messageid, file.channelid )
+	printt( "[DiscordBridge] Messaging Players: [Discord] " + name + ": " + noNewLineMessage )
+	SendMessageToPlayers( "[38;2;88;101;242m" + "[Discord] " + name + ": \x1b[0m" + noNewLineMessage )
+	GreenCircleDiscordToTitanfallBridge( messageId, file.channelId )
 }
 
-void function RedCircleDiscordToTitanfallBridge( string messageid, string channelid )
+void function RedCircleDiscordToTitanfallBridge( string messageId, string channelId )
 {
 	HttpRequest request
 
 	request.method = HttpRequestMethod.PUT
-	request.url = "https://discord.com/api/v9/channels/" + channelid + "/messages/" + messageid + "/reactions/%F0%9F%94%B4/@me"
-	request.headers = { ["Authorization"] = [ "Bot " + file.bottoken ], ["User-Agent"] = [ "DiscordToTitanfallBridge" ] }
+	request.url = "https://discord.com/api/v9/channels/" + channelId + "/messages/" + messageId + "/reactions/%F0%9F%94%B4/@me"
+	request.headers = { ["Authorization"] = [ "Bot " + file.botToken ], ["User-Agent"] = [ "DiscordToTitanfallBridge" ] }
 
 	void functionref( HttpRequestResponse ) onSuccess = void function( HttpRequestResponse response )
 	{
@@ -921,13 +911,13 @@ void function RedCircleDiscordToTitanfallBridge( string messageid, string channe
 	NSHttpRequest( request, onSuccess, onFailure )
 }
 
-void function OrangeCircleDiscordToTitanfallBridge( string messageid, string channelid )
+void function OrangeCircleDiscordToTitanfallBridge( string messageId, string channelId )
 {
 	HttpRequest request
 
 	request.method = HttpRequestMethod.PUT
-	request.url = "https://discord.com/api/v9/channels/" + channelid + "/messages/" + messageid + "/reactions/%F0%9F%9F%A0/@me"
-	request.headers = { ["Authorization"] = [ "Bot " + file.bottoken ], ["User-Agent"] = [ "DiscordToTitanfallBridge" ] }
+	request.url = "https://discord.com/api/v9/channels/" + channelId + "/messages/" + messageId + "/reactions/%F0%9F%9F%A0/@me"
+	request.headers = { ["Authorization"] = [ "Bot " + file.botToken ], ["User-Agent"] = [ "DiscordToTitanfallBridge" ] }
 
 	void functionref( HttpRequestResponse ) onSuccess = void function( HttpRequestResponse response )
 	{
@@ -946,13 +936,13 @@ void function OrangeCircleDiscordToTitanfallBridge( string messageid, string cha
 	NSHttpRequest( request, onSuccess, onFailure )
 }
 
-void function GreenCircleDiscordToTitanfallBridge( string messageid, string channelid )
+void function GreenCircleDiscordToTitanfallBridge( string messageId, string channelId )
 {
 	HttpRequest request
 
 	request.method = HttpRequestMethod.PUT
-	request.url = "https://discord.com/api/v9/channels/" + channelid + "/messages/" + messageid + "/reactions/%F0%9F%9F%A2/@me"
-	request.headers = { ["Authorization"] = [ "Bot " + file.bottoken ], ["User-Agent"] = [ "DiscordToTitanfallBridge" ] }
+	request.url = "https://discord.com/api/v9/channels/" + channelId + "/messages/" + messageId + "/reactions/%F0%9F%9F%A2/@me"
+	request.headers = { ["Authorization"] = [ "Bot " + file.botToken ], ["User-Agent"] = [ "DiscordToTitanfallBridge" ] }
 
 	void functionref( HttpRequestResponse ) onSuccess = void function( HttpRequestResponse response )
 	{

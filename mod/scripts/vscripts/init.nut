@@ -384,29 +384,28 @@ global struct WeaponBulletHitParams
 
 struct
 {
-	bool printsshowunixtimestamp = false
-	bool printsshowingametime = false
-	bool printsshowscript = false
+	bool printsShowUnixTimeStamp = false
+	bool printsShowInGameTime = false
+	bool printsShowScript = false
 	array<void functionref( var, bool )> hooks
-	array<void functionref( var, bool )> hookswithextrainfo
+	array<void functionref( var, bool )> hooksWithExtraInfo
 } file
 
 void function printl( var text )
 {
-	return printmessage( text, false )
+	return printMessage( text, false )
 }
 
 void function Msg( var text )
 {
-	return printmessage( text, false )
+	return printMessage( text, false )
 }
 
-void function printmessage( var text, bool usenewline )
+void function printMessage( var text, bool useNewLine )
 {
-	string newline = usenewline ? "\n" : ""
-	string unixtimestamp = file.printsshowunixtimestamp ? ( "[" + expect int( compilestring( "return GetUnixTimestamp()" )() ) + "] " ) : ""
-	string ingametime = file.printsshowingametime ? ( "[" + expect float( compilestring( "return Time()" )() ) + "] " ) : ""
-
+	string newLine = useNewLine ? "\n" : ""
+	string unixTimeStamp = file.printsShowUnixTimeStamp ? ( "[" + expect int( compilestring( "return GetUnixTimestamp()" )() ) + "] " ) : ""
+	string inGameTime = file.printsShowInGameTime ? ( "[" + expect float( compilestring( "return Time()" )() ) + "] " ) : ""
 	table stack
 
 	if ( IsValid( getstackinfos( 3 ) ) )
@@ -417,20 +416,20 @@ void function printmessage( var text, bool usenewline )
 			stack = expect table( getstackinfos( 4 ) )
 	}
 
-	string printscript = file.printsshowscript
+	string printScript = file.printsShowScript
 		? (
 			"[" + expect string( "src" in stack ? stack[ "src" ] : "unknown" ) + ":" + expect int( "line" in stack ? stack[ "line" ] : -1 ) + " " +
 				expect string( "func" in stack ? stack[ "func" ] : "unknown" ) + "] "
 		)
 		: ""
 
-	string printmessage = unixtimestamp + ingametime + printscript + text + newline
+	string printMessage = unixTimeStamp + inGameTime + printScript + text + newLine
 
 	foreach ( void functionref( var, bool ) hook in file.hooks )
-		hook( text + newline, usenewline )
+		hook( text + newLine, useNewLine )
 
-	foreach ( void functionref( var, bool ) hook in file.hookswithextrainfo )
-		hook( printmessage, usenewline )
+	foreach ( void functionref( var, bool ) hook in file.hooksWithExtraInfo )
+		hook( printMessage, useNewLine )
 
 	return print( printmessage )
 }
@@ -446,17 +445,17 @@ void function CodeCallback_Precompile()
 
 void function PrintsShowUnixTimestamp( bool enable )
 {
-	file.printsshowunixtimestamp = enable
+	file.printsShowUnixTimeStamp = enable
 }
 
 void function PrintsShowInGameTime( bool enable )
 {
-	file.printsshowingametime = enable
+	file.printsShowInGameTime = enable
 }
 
 void function PrintsShowScript( bool enable )
 {
-	file.printsshowscript = enable
+	file.printsShowScript = enable
 }
 
 void function AddPrintHook( void functionref( var, bool ) hook )
@@ -466,5 +465,5 @@ void function AddPrintHook( void functionref( var, bool ) hook )
 
 void function AddPrintHookWithExtraInfo( void functionref( var, bool ) hook )
 {
-	file.hookswithextrainfo.append( hook )
+	file.hooksWithExtraInfo.append( hook )
 }
